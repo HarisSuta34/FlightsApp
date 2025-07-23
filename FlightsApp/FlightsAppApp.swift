@@ -1,0 +1,57 @@
+import SwiftUI
+import FirebaseCore
+import FirebaseAuth
+import GoogleSignIn
+
+@main
+struct FlightsAppApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+
+    @StateObject private var loginViewModel = LoginScreenViewModel(dataManager: LoginDataManager.shared)
+
+    @State private var showSplash = true
+
+    var body: some Scene {
+        WindowGroup {
+            VStack {
+                if showSplash {
+                    SplashScreenView(showSplash: $showSplash)
+                        .environmentObject(loginViewModel)
+                } else if loginViewModel.isLoggedIn {
+                    ProfileScreenView()
+                        .environmentObject(loginViewModel)
+                } else {
+                    LoginScreenView()
+                        .environmentObject(loginViewModel)
+                }
+            }
+            .onAppear {
+                if let clientID = FirebaseApp.app()?.options.clientID {
+                    GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
+                    print("GIDSignIn konfigurisan sa ClientID: \(clientID)")
+                } else {
+                    print("GREŠKA: Firebase clientID nije pronađen u konfiguraciji. Google prijava možda neće raditi.")
+                }
+
+                loginViewModel.loadLoginStateIfNeeded()
+
+                GIDSignIn.sharedInstance.restorePreviousSignIn { user, error in
+                    self.loginViewModel.handleGoogleSignInResult(user: user, error: error)
+                }
+            }
+        }
+    }
+}
+
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        FirebaseApp.configure()
+        print("Firebase je uspješno konfigurisan.")
+        return true
+    }
+    
+    func application(_ application: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+        return GIDSignIn.sharedInstance.handle(url)
+    }
+}
