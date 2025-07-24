@@ -86,7 +86,7 @@ struct ProfileScreenView: View {
                             NavigationLink(destination: FAQScreenView()) {
                                 ProfileOptionRowView(icon: "questionmark.circle.fill", title: "Frequently Asked Questions (FAQ)", subtitle: "Answers to common questions", showChevron: true, showToggle: false, toggleState: .constant(false))
                             }
-                            .buttonStyle(PlainButtonStyle()) /
+                            .buttonStyle(PlainButtonStyle()) 
                         }
                         .padding(.vertical)
                         .background(Color.white)
