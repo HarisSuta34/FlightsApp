@@ -6,6 +6,12 @@ struct RegisterSheetView: View {
     
     @ObservedObject var viewModel: LoginScreenViewModel
     
+    @FocusState private var focusedField: Field?
+    enum Field: Hashable {
+        case email
+        case password
+    }
+
     var body: some View {
         VStack {
             Text("Create Account")
@@ -22,11 +28,44 @@ struct RegisterSheetView: View {
                     .keyboardType(.emailAddress)
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
+                    .focused($focusedField, equals: .email)
+                    .onChange(of: viewModel.email) { _, _ in
+                        viewModel.validateEmailFormat()
+                    }
+                    .onChange(of: focusedField) { _, newFocus in
+                        if newFocus != .email {
+                            viewModel.validateEmailFormat()
+                        }
+                    }
+                
+                if let error = viewModel.emailValidationError {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .font(.caption)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading)
+                }
                 
                 SecureField("Password", text: $viewModel.password)
                     .padding()
                     .background(Color.gray.opacity(0.1))
                     .cornerRadius(10)
+                    .focused($focusedField, equals: .password)
+                    .onChange(of: viewModel.password) { _, _ in
+                    }
+                    .onChange(of: focusedField) { _, newFocus in
+                        if newFocus != .password {
+                            viewModel.validatePasswordLength()
+                        }
+                    }
+
+                if let error = viewModel.passwordValidationError {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .font(.caption)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading)
+                }
                 
                 Button {
                     viewModel.registerUser()
@@ -54,5 +93,12 @@ struct RegisterSheetView: View {
             Spacer()
             
         }
+        .onTapGesture {
+            focusedField = nil
+        }
     }
+}
+
+#Preview {
+    RegisterSheetView(viewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))
 }

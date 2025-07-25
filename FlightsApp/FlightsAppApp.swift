@@ -16,21 +16,18 @@ struct FlightsAppApp: App {
             VStack {
                 if showSplash {
                     SplashScreenView(showSplash: $showSplash)
-                        .environmentObject(loginViewModel)
                 } else if loginViewModel.isLoggedIn {
-                    ProfileScreenView()
-                        .environmentObject(loginViewModel)
+                    HomeScreenView()
                 } else {
-                    LoginScreenView()
-                        .environmentObject(loginViewModel)
+                    LoginScreenView(viewModel: loginViewModel)
                 }
             }
             .onAppear {
                 if let clientID = FirebaseApp.app()?.options.clientID {
                     GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: clientID)
-                    print("GIDSignIn konfigurisan sa ClientID: \(clientID)")
+                    print("GIDSignIn configured with ClientID: \(clientID)")
                 } else {
-                    print("GREŠKA: Firebase clientID nije pronađen u konfiguraciji. Google prijava možda neće raditi.")
+                    print("ERROR: Firebase clientID not found in configuration. Google sign-in might not work.")
                 }
 
                 loginViewModel.loadLoginStateIfNeeded()
@@ -47,7 +44,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         FirebaseApp.configure()
-        print("Firebase je uspješno konfigurisan.")
+        print("Firebase is successfully configured.")
         return true
     }
     

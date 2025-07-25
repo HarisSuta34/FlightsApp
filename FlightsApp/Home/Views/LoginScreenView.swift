@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct LoginScreenView: View {
-    @EnvironmentObject var viewModel: LoginScreenViewModel
+    @ObservedObject var viewModel: LoginScreenViewModel
     
     @Environment(\.dismiss) var dismiss
 
@@ -18,10 +18,10 @@ struct LoginScreenView: View {
             }
             .onChange(of: viewModel.isLoggedIn) { oldValue, newValue in
                 if newValue {
-                    print("Korisnik je prijavljen. Zatvaram LoginScreenView.")
+                    print("User is logged in. Dismissing LoginScreenView.")
                     dismiss()
                 } else {
-                    print("Korisnik je odjavljen ili automatska prijava nije uspjela.")
+                    print("User is unlogged or automatic login failed.")
                 }
             }
             .sheet(isPresented: $viewModel.showRegisterScreen) {
@@ -32,6 +32,5 @@ struct LoginScreenView: View {
 }
 
 #Preview {
-    LoginScreenView()
-        .environmentObject(LoginScreenViewModel(dataManager: LoginDataManager.shared))
+    LoginScreenView(viewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))
 }

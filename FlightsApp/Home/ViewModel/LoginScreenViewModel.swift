@@ -4,13 +4,33 @@ import GoogleSignIn
 import FirebaseAuth
 
 class LoginScreenViewModel: ObservableObject {
-    @Published var email: String = ""
-    @Published var password: String = ""
+    @Published var email: String = "" {
+        didSet {
+            validateEmailFormat()
+            if errorMessage != nil && emailValidationError == nil && passwordValidationError == nil {
+                errorMessage = nil
+            }
+        }
+    }
+    @Published var password: String = "" {
+        didSet {
+            validatePasswordLength()
+            if errorMessage != nil && emailValidationError == nil && passwordValidationError == nil {
+                errorMessage = nil
+            }
+        }
+    }
     @Published var keepSignedIn: Bool = false
     @Published var showPassword: Bool = false
     
     @Published var isLoggedIn: Bool = false
     @Published var errorMessage: String?
+    
+    @Published var emailValidationError: String?
+    @Published var passwordValidationError: String?
+    @Published var isValidEmailFormat: Bool = false
+    @Published var isPasswordLongEnough: Bool = false
+
     @Published var showRegisterScreen: Bool = false
 
     private let dataManager: AuthenticationAndDataManagement
@@ -19,33 +39,53 @@ class LoginScreenViewModel: ObservableObject {
         self.dataManager = dataManager
         self.isLoggedIn = dataManager.isAuthenticated
         self.email = dataManager.isAuthenticated ? (Auth.auth().currentUser?.email ?? "") : ""
+        
+        validateEmailFormat()
+        validatePasswordLength()
     }
 
     func loadLoginStateIfNeeded() {
         self.isLoggedIn = dataManager.isAuthenticated
         self.email = dataManager.isAuthenticated ? (Auth.auth().currentUser?.email ?? "") : ""
+    }
 
-        if isLoggedIn {
-            print("Korisnik je prijavljen putem Firebase-a.")
-            if let uid = dataManager.currentUserID {
-                dataManager.getUserData(uid: uid) { result in
-                    switch result {
-                    case .success(let userData):
-                        print("Dohvaćeni korisnički podaci iz Firestore-a: \(userData)")
-                    case .failure(let error):
-                        print("Greška pri dohvaćanju korisničkih podataka: \(error.localizedDescription)")
-                        self.errorMessage = "Greška pri dohvaćanju podataka."
-                    }
-                }
-            }
+    func validateEmailFormat() {
+        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPredicate = NSPredicate(format:"SELF MATCHES %@", emailRegex)
+        
+        if email.isEmpty {
+            emailValidationError = "Email address cannot be empty."
+            isValidEmailFormat = false
+        } else if !emailPredicate.evaluate(with: email) {
+            emailValidationError = "Invalid email format."
+            isValidEmailFormat = false
         } else {
-            print("Korisnik nije prijavljen.")
+            emailValidationError = nil
+            isValidEmailFormat = true
+        }
+    }
+    
+    func validatePasswordLength() {
+        if password.isEmpty {
+            passwordValidationError = "Password cannot be empty."
+            isPasswordLongEnough = false
+        } else if password.count < 6 {
+            passwordValidationError = "Password must be at least 6 characters long."
+            isPasswordLongEnough = false
+        } else {
+            passwordValidationError = nil
+            isPasswordLongEnough = true
         }
     }
 
     func login() {
-        guard !email.isEmpty && !password.isEmpty else {
-            errorMessage = "Molimo unesite email i lozinku."
+        validateEmailFormat()
+        validatePasswordLength()
+        
+        guard isValidEmailFormat && isPasswordLongEnough else {
+            if emailValidationError == nil && passwordValidationError == nil {
+                errorMessage = "Please correct the errors in the form."
+            }
             return
         }
 
@@ -59,19 +99,24 @@ class LoginScreenViewModel: ObservableObject {
                     self.isLoggedIn = true
                     self.errorMessage = nil
                     self.email = authResult.user.email ?? ""
-                    print("Prijava uspješna za \(authResult.user.email ?? "nepoznatog korisnika")")
+                    print("Login successful for \(authResult.user.email ?? "unknown user")")
                 case .failure(let error):
                     self.isLoggedIn = false
                     self.errorMessage = error.localizedDescription
-                    print("Greška pri prijavi: \(error.localizedDescription)")
+                    print("Login error: \(error.localizedDescription)")
                 }
             }
         }
     }
     
     func registerUser() {
-        guard !email.isEmpty && !password.isEmpty else {
-            errorMessage = "Molimo unesite email i lozinku za registraciju."
+        validateEmailFormat()
+        validatePasswordLength()
+        
+        guard isValidEmailFormat && isPasswordLongEnough else {
+            if emailValidationError == nil && passwordValidationError == nil {
+                errorMessage = "Please correct the errors in the form."
+            }
             return
         }
         
@@ -86,11 +131,11 @@ class LoginScreenViewModel: ObservableObject {
                     self.errorMessage = nil
                     self.showRegisterScreen = false
                     self.email = authResult.user.email ?? ""
-                    print("Registracija uspješna za \(authResult.user.email ?? "nepoznatog korisnika")")
+                    print("Registration successful for \(authResult.user.email ?? "unknown user")")
                 case .failure(let error):
                     self.isLoggedIn = false
                     self.errorMessage = error.localizedDescription
-                    print("Greška pri registraciji: \(error.localizedDescription)")
+                    print("Registration error: \(error.localizedDescription)")
                 }
             }
         }
@@ -107,12 +152,16 @@ class LoginScreenViewModel: ObservableObject {
                     self.password = ""
                     self.keepSignedIn = false
                     self.errorMessage = nil
-                    print("Korisnik je odjavljen iz Firebase-a.")
+                    self.emailValidationError = nil
+                    self.passwordValidationError = nil
+                    self.isValidEmailFormat = false
+                    self.isPasswordLongEnough = false
+                    print("User logged out from Firebase.")
                     GIDSignIn.sharedInstance.signOut()
-                    print("Google korisnik odjavljen.")
+                    print("Google user logged out.")
                 case .failure(let error):
-                    self.errorMessage = "Greška pri odjavi: \(error.localizedDescription)"
-                    print("Greška pri odjavi iz Firebase-a: \(error.localizedDescription)")
+                    self.errorMessage = "Logout error: \(error.localizedDescription)"
+                    print("Logout error from Firebase: \(error.localizedDescription)")
                 }
             }
         }
@@ -121,27 +170,27 @@ class LoginScreenViewModel: ObservableObject {
     func handleGoogleSignInResult(user: GIDGoogleUser?, error: Error?) {
         if let error = error {
             if user == nil && error.localizedDescription.contains("The operation couldn’t be completed. (com.google.GIDSignIn error -4.)") {
-                print("Google Sign-In: Nema prethodne prijave. Ovo je očekivano ponašanje.")
+                print("Google Sign-In: No previous sign-in. This is expected behavior.")
                 self.errorMessage = nil
                 self.isLoggedIn = false
                 return
             }
             
-            errorMessage = "Google prijava neuspješna: \(error.localizedDescription)"
+            errorMessage = "Google sign-in failed: \(error.localizedDescription)"
             isLoggedIn = false
             print("Google sign-in error: \(error.localizedDescription)")
             return
         }
 
         guard let user = user else {
-            errorMessage = "Google prijava neuspješna: Nema korisničkih podataka."
+            errorMessage = "Google sign-in failed: No user data."
             isLoggedIn = false
             print("Google sign-in error: No user data.")
             return
         }
 
         guard let idToken = user.idToken?.tokenString else {
-            errorMessage = "Google prijava neuspješna: Nema ID tokena."
+            errorMessage = "Google sign-in failed: Missing ID token."
             isLoggedIn = false
             print("Google sign-in error: Missing ID Token.")
             return
@@ -156,10 +205,10 @@ class LoginScreenViewModel: ObservableObject {
                     self.isLoggedIn = true
                     self.errorMessage = nil
                     self.email = authResult.user.email ?? ""
-                    print("Google prijava uspješna i povezana sa Firebase-om za: \(authResult.user.email ?? "nepoznatog korisnika")")
+                    print("Google sign-in successful and linked with Firebase for: \(authResult.user.email ?? "unknown user")")
                 case .failure(let error):
                     self.isLoggedIn = false
-                    self.errorMessage = "Firebase Google prijava neuspješna: \(error.localizedDescription)"
+                    self.errorMessage = "Firebase Google sign-in failed: \(error.localizedDescription)"
                     print("Firebase Google sign-in error: \(error.localizedDescription)")
                 }
             }

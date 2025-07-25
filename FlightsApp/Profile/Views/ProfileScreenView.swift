@@ -1,12 +1,11 @@
 import SwiftUI
 
 struct ProfileScreenView: View {
-    @EnvironmentObject var loginViewModel: LoginScreenViewModel
-    
+    @ObservedObject var viewModel: LoginScreenViewModel
     @State private var isFaceIDEnabled: Bool = false
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 Color(red: 36/255, green: 97/255, blue: 223/255)
                     .ignoresSafeArea(.all)
@@ -23,7 +22,7 @@ struct ProfileScreenView: View {
                                 .overlay(Circle().stroke(Color.white, lineWidth: 2))
 
                             VStack(alignment: .leading) {
-                                Text(loginViewModel.email.isEmpty ? "User" : loginViewModel.email)
+                                Text(viewModel.email.isEmpty ? "User" : viewModel.email)
                                     .font(.title2)
                                     .fontWeight(.bold)
                                     .foregroundColor(.white)
@@ -55,22 +54,18 @@ struct ProfileScreenView: View {
                             Button(action: { print("My Account tapped") }) {
                                 ProfileOptionRowView(icon: "person.fill", title: "My Account", subtitle: "Edit your details", showChevron: true, showToggle: false, toggleState: .constant(false))
                             }
-                            .buttonStyle(PlainButtonStyle())
 
                             Button(action: { print("Change Password tapped") }) {
                                 ProfileOptionRowView(icon: "lock.fill", title: "Change Password", subtitle: "Update your password", showChevron: true, showToggle: false, toggleState: .constant(false))
                             }
-                            .buttonStyle(PlainButtonStyle())
 
                             ProfileOptionRowView(icon: "faceid", title: "Face ID / Touch ID", subtitle: "Manage your device security", showChevron: false, showToggle: true, toggleState: $isFaceIDEnabled) {
-                                // Action for Face ID toggle, functionality not implemented
                                 print("Face ID toggle changed to \(isFaceIDEnabled)")
                             }
-                            
-                            Button(action: { loginViewModel.logout() }) {
+
+                            Button(action: { viewModel.logout() }) {
                                 ProfileOptionRowView(icon: "arrow.right.square.fill", title: "Log out", subtitle: "Log out from the application", showChevron: true, showToggle: false, toggleState: .constant(false))
                             }
-                            .buttonStyle(PlainButtonStyle())
                         }
                         .padding(.vertical)
                         .background(Color.white)
@@ -86,7 +81,6 @@ struct ProfileScreenView: View {
                             NavigationLink(destination: FAQScreenView()) {
                                 ProfileOptionRowView(icon: "questionmark.circle.fill", title: "Frequently Asked Questions (FAQ)", subtitle: "Answers to common questions", showChevron: true, showToggle: false, toggleState: .constant(false))
                             }
-                            .buttonStyle(PlainButtonStyle()) 
                         }
                         .padding(.vertical)
                         .background(Color.white)
@@ -99,10 +93,45 @@ struct ProfileScreenView: View {
             .navigationTitle("My Profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // Title in center
                 ToolbarItem(placement: .principal) {
                     Text("My Profile")
                         .font(.headline)
                         .foregroundColor(.white)
+                }
+
+                // Bottom bar
+                ToolbarItemGroup(placement: .bottomBar) {
+                    NavigationLink(destination: HomeScreenView()) {
+                        VStack {
+                            Image(systemName: "house.fill")
+                                .resizable()
+                                .frame(width: 24, height: 24)
+                                .foregroundColor(.blue)
+                            Text("Home")
+                                .foregroundColor(.blue)
+                        }
+                        .padding(.top, 10)
+                    }
+
+                    NavigationLink(destination: ProfileScreenView(viewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))) {
+                        VStack {
+                            Image(systemName: "person.fill")
+                                .resizable()
+                                .frame(width: 24, height: 24)
+                                .foregroundColor(.blue)
+                            Text("Profile")
+                                .foregroundColor(.blue)
+                        }
+                        .padding(.top, 10)
+                    }
+                }
+            }
+            .toolbarBackground(.white, for: .bottomBar)
+            .toolbarBackground(.visible, for: .bottomBar)
+            .onChange(of: viewModel.isLoggedIn) { oldValue, newValue in
+                if !newValue {
+                    print("User logged out. ProfileScreenView should be dismissed.")
                 }
             }
         }
@@ -110,6 +139,5 @@ struct ProfileScreenView: View {
 }
 
 #Preview {
-    ProfileScreenView()
-        .environmentObject(LoginScreenViewModel(dataManager: LoginDataManager.shared))
+    ProfileScreenView(viewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))
 }

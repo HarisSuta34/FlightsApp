@@ -23,10 +23,10 @@ struct RegisterScreenView: View {
                     .foregroundColor(.white)
                 }
             }
-        }
-        .onChange(of: viewModel.isLoggedIn) { oldValue, newValue in
-            if newValue {
-                dismiss() 
+            .onChange(of: viewModel.isLoggedIn) { oldValue, newValue in
+                if newValue {
+                    dismiss()
+                }
             }
         }
     }
