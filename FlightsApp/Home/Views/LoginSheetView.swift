@@ -28,13 +28,18 @@ struct LoginSheetView: View {
                     .disableAutocorrection(true)
                 
                 HStack {
-                    if viewModel.showPassword {
-                        TextField("Password", text: $viewModel.password)
-                            .animation(nil, value: viewModel.showPassword)
-                    } else {
+                    ZStack {
+                        // SecureField se uvijek prikazuje, ali se skriva/prikazuje pomoću opacity
                         SecureField("Password", text: $viewModel.password)
-                            .animation(nil, value: viewModel.showPassword)
+                            .opacity(viewModel.showPassword ? 0 : 1)
+                            .disabled(viewModel.showPassword) // Onemogućava interakciju kada je skriven
+                        
+                        // TextField se uvijek prikazuje, ali se skriva/prikazuje pomoću opacity
+                        TextField("Password", text: $viewModel.password)
+                            .opacity(viewModel.showPassword ? 1 : 0)
+                            .disabled(!viewModel.showPassword) // Onemogućava interakciju kada je skriven
                     }
+                    .animation(.none, value: viewModel.showPassword) // Uklanjamo animaciju da ne glitcha
 
                     Button {
                         viewModel.showPassword.toggle()
