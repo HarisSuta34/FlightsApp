@@ -62,10 +62,13 @@ struct ProfileScreenView: View {
                             ProfileOptionRowView(icon: "faceid", title: "Face ID / Touch ID", subtitle: "Manage your device security", showChevron: false, showToggle: true, toggleState: $isFaceIDEnabled) {
                                 print("Face ID toggle changed to \(isFaceIDEnabled)")
                             }
-
+                            
+                    
                             Button(action: { viewModel.logout() }) {
                                 ProfileOptionRowView(icon: "arrow.right.square.fill", title: "Log out", subtitle: "Log out from the application", showChevron: true, showToggle: false, toggleState: .constant(false))
-                            }
+                                }
+
+                            
                         }
                         .padding(.vertical)
                         .background(Color.white)

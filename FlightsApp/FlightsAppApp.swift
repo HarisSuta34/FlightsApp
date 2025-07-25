@@ -13,13 +13,17 @@ struct FlightsAppApp: App {
 
     var body: some Scene {
         WindowGroup {
-            VStack {
+            ZStack { 
                 if showSplash {
                     SplashScreenView(showSplash: $showSplash)
                 } else if loginViewModel.isLoggedIn {
                     HomeScreenView()
-                } else {
+                } else if !loginViewModel.isLoggedIn {
                     LoginScreenView(viewModel: loginViewModel)
+                }
+                    
+                if loginViewModel.isLoadingAuth {
+                    LoadingView()
                 }
             }
             .onAppear {

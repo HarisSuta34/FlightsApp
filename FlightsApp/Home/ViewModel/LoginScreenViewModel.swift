@@ -32,6 +32,8 @@ class LoginScreenViewModel: ObservableObject {
     @Published var isPasswordLongEnough: Bool = false
 
     @Published var showRegisterScreen: Bool = false
+    
+    @Published var isLoadingAuth: Bool = false
 
     private let dataManager: AuthenticationAndDataManagement
     
@@ -90,10 +92,12 @@ class LoginScreenViewModel: ObservableObject {
         }
 
         errorMessage = nil
+        isLoadingAuth = true
 
         dataManager.loginUser(email: email, password: password) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
+                self.isLoadingAuth = false
                 switch result {
                 case .success(let authResult):
                     self.isLoggedIn = true
@@ -121,10 +125,12 @@ class LoginScreenViewModel: ObservableObject {
         }
         
         errorMessage = nil
+        isLoadingAuth = true
 
         dataManager.registerUser(email: email, password: password) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
+                self.isLoadingAuth = false
                 switch result {
                 case .success(let authResult):
                     self.isLoggedIn = true
@@ -142,9 +148,11 @@ class LoginScreenViewModel: ObservableObject {
     }
 
     func logout() {
+        isLoadingAuth = true
         dataManager.signOut { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
+                self.isLoadingAuth = false
                 switch result {
                 case .success:
                     self.isLoggedIn = false
@@ -168,16 +176,19 @@ class LoginScreenViewModel: ObservableObject {
     }
 
     func handleGoogleSignInResult(user: GIDGoogleUser?, error: Error?) {
+        isLoadingAuth = true
         if let error = error {
             if user == nil && error.localizedDescription.contains("The operation couldn’t be completed. (com.google.GIDSignIn error -4.)") {
                 print("Google Sign-In: No previous sign-in. This is expected behavior.")
                 self.errorMessage = nil
                 self.isLoggedIn = false
+                self.isLoadingAuth = false
                 return
             }
             
             errorMessage = "Google sign-in failed: \(error.localizedDescription)"
             isLoggedIn = false
+            isLoadingAuth = false
             print("Google sign-in error: \(error.localizedDescription)")
             return
         }
@@ -185,6 +196,7 @@ class LoginScreenViewModel: ObservableObject {
         guard let user = user else {
             errorMessage = "Google sign-in failed: No user data."
             isLoggedIn = false
+            isLoadingAuth = false
             print("Google sign-in error: No user data.")
             return
         }
@@ -192,6 +204,7 @@ class LoginScreenViewModel: ObservableObject {
         guard let idToken = user.idToken?.tokenString else {
             errorMessage = "Google sign-in failed: Missing ID token."
             isLoggedIn = false
+            isLoadingAuth = false
             print("Google sign-in error: Missing ID Token.")
             return
         }
@@ -200,6 +213,7 @@ class LoginScreenViewModel: ObservableObject {
         dataManager.signInWithGoogle(idToken: idToken, accessToken: accessToken) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
+                self.isLoadingAuth = false 
                 switch result {
                 case .success(let authResult):
                     self.isLoggedIn = true
