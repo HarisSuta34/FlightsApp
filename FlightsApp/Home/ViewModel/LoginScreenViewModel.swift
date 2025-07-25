@@ -6,18 +6,18 @@ import FirebaseAuth
 class LoginScreenViewModel: ObservableObject {
     @Published var email: String = "" {
         didSet {
-            validateEmailFormat()
             if errorMessage != nil && emailValidationError == nil && passwordValidationError == nil {
                 errorMessage = nil
             }
+            validateEmailFormatInternal()
         }
     }
     @Published var password: String = "" {
         didSet {
-            validatePasswordLength()
             if errorMessage != nil && emailValidationError == nil && passwordValidationError == nil {
                 errorMessage = nil
             }
+            validatePasswordLengthInternal()
         }
     }
     @Published var keepSignedIn: Bool = false
@@ -31,6 +31,9 @@ class LoginScreenViewModel: ObservableObject {
     @Published var isValidEmailFormat: Bool = false
     @Published var isPasswordLongEnough: Bool = false
 
+    @Published var emailFieldTouched: Bool = false
+    @Published var passwordFieldTouched: Bool = false
+
     @Published var showRegisterScreen: Bool = false
     
     @Published var isLoadingAuth: Bool = false
@@ -42,8 +45,8 @@ class LoginScreenViewModel: ObservableObject {
         self.isLoggedIn = dataManager.isAuthenticated
         self.email = dataManager.isAuthenticated ? (Auth.auth().currentUser?.email ?? "") : ""
         
-        validateEmailFormat()
-        validatePasswordLength()
+        validateEmailFormatInternal()
+        validatePasswordLengthInternal()
     }
 
     func loadLoginStateIfNeeded() {
@@ -51,36 +54,74 @@ class LoginScreenViewModel: ObservableObject {
         self.email = dataManager.isAuthenticated ? (Auth.auth().currentUser?.email ?? "") : ""
     }
 
-    func validateEmailFormat() {
+    private func validateEmailFormatInternal() {
         let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
         let emailPredicate = NSPredicate(format:"SELF MATCHES %@", emailRegex)
         
         if email.isEmpty {
-            emailValidationError = "Email address cannot be empty."
             isValidEmailFormat = false
         } else if !emailPredicate.evaluate(with: email) {
-            emailValidationError = "Invalid email format."
             isValidEmailFormat = false
         } else {
-            emailValidationError = nil
             isValidEmailFormat = true
         }
     }
+
+    func validateEmailFormat() {
+        validateEmailFormatInternal()
+        
+        guard emailFieldTouched else {
+            emailValidationError = nil
+            return
+        }
+
+        if email.isEmpty {
+            emailValidationError = "Email address cannot be empty."
+        } else if !isValidEmailFormat {
+            emailValidationError = "Invalid email format."
+        } else {
+            emailValidationError = nil
+        }
+    }
     
-    func validatePasswordLength() {
+    private func validatePasswordLengthInternal() {
         if password.isEmpty {
-            passwordValidationError = "Password cannot be empty."
             isPasswordLongEnough = false
         } else if password.count < 6 {
-            passwordValidationError = "Password must be at least 6 characters long."
             isPasswordLongEnough = false
         } else {
-            passwordValidationError = nil
             isPasswordLongEnough = true
         }
     }
 
+    func validatePasswordLength() {
+        validatePasswordLengthInternal()
+        
+        guard passwordFieldTouched else {
+            passwordValidationError = nil
+            return
+        }
+
+        if password.isEmpty {
+            passwordValidationError = "Password cannot be empty."
+        } else if !isPasswordLongEnough {
+            passwordValidationError = "Password must be at least 6 characters long."
+        } else {
+            passwordValidationError = nil
+        }
+    }
+
+    var isRegisterButtonEnabled: Bool {
+        return !email.isEmpty && !password.isEmpty
+    }
+    
+    var isLoginButtonEnabled: Bool {
+        return !email.isEmpty && !password.isEmpty
+    }
+
     func login() {
+        emailFieldTouched = true
+        passwordFieldTouched = true
         validateEmailFormat()
         validatePasswordLength()
         
@@ -114,9 +155,11 @@ class LoginScreenViewModel: ObservableObject {
     }
     
     func registerUser() {
+        emailFieldTouched = true
+        passwordFieldTouched = true
         validateEmailFormat()
         validatePasswordLength()
-        
+
         guard isValidEmailFormat && isPasswordLongEnough else {
             if emailValidationError == nil && passwordValidationError == nil {
                 errorMessage = "Please correct the errors in the form."
@@ -138,6 +181,11 @@ class LoginScreenViewModel: ObservableObject {
                     self.showRegisterScreen = false
                     self.email = authResult.user.email ?? ""
                     print("Registration successful for \(authResult.user.email ?? "unknown user")")
+                    // Resetuj validacijske flagove nakon uspješne registracije
+                    self.emailFieldTouched = false
+                    self.passwordFieldTouched = false
+                    self.emailValidationError = nil
+                    self.passwordValidationError = nil
                 case .failure(let error):
                     self.isLoggedIn = false
                     self.errorMessage = error.localizedDescription
@@ -164,6 +212,8 @@ class LoginScreenViewModel: ObservableObject {
                     self.passwordValidationError = nil
                     self.isValidEmailFormat = false
                     self.isPasswordLongEnough = false
+                    self.emailFieldTouched = false
+                    self.passwordFieldTouched = false
                     print("User logged out from Firebase.")
                     GIDSignIn.sharedInstance.signOut()
                     print("Google user logged out.")
@@ -213,7 +263,7 @@ class LoginScreenViewModel: ObservableObject {
         dataManager.signInWithGoogle(idToken: idToken, accessToken: accessToken) { [weak self] result in
             DispatchQueue.main.async {
                 guard let self = self else { return }
-                self.isLoadingAuth = false 
+                self.isLoadingAuth = false
                 switch result {
                 case .success(let authResult):
                     self.isLoggedIn = true

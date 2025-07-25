@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct HomeScreenView: View {
-    @EnvironmentObject var loginViewModel: LoginScreenViewModel
+    @ObservedObject var viewModel: LoginScreenViewModel
 
     var body: some View {
         NavigationStack {
@@ -16,7 +16,7 @@ struct HomeScreenView: View {
             }
             .toolbar {
                 ToolbarItemGroup(placement: .bottomBar) {
-                    NavigationLink(destination: HomeScreenView()) {
+                    NavigationLink(destination: HomeScreenView(viewModel: viewModel)) {
                         VStack {
                             Image(systemName: "house.fill")
                                 .resizable()
@@ -30,7 +30,7 @@ struct HomeScreenView: View {
                     }
                     .buttonStyle(PlainButtonStyle())
 
-                    NavigationLink(destination: ProfileScreenView(viewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))) {
+                    NavigationLink(destination: ProfileScreenView(viewModel: viewModel)) {
                         VStack {
                             Image(systemName: "person.fill")
                                 .resizable()
@@ -52,6 +52,5 @@ struct HomeScreenView: View {
 }
 
 #Preview {
-    HomeScreenView()
-        .environmentObject(LoginScreenViewModel(dataManager: LoginDataManager.shared))
+    HomeScreenView(viewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))
 }

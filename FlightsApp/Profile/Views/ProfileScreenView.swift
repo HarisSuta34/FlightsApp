@@ -54,21 +54,21 @@ struct ProfileScreenView: View {
                             Button(action: { print("My Account tapped") }) {
                                 ProfileOptionRowView(icon: "person.fill", title: "My Account", subtitle: "Edit your details", showChevron: true, showToggle: false, toggleState: .constant(false))
                             }
+                            .buttonStyle(PlainButtonStyle())
 
                             Button(action: { print("Change Password tapped") }) {
                                 ProfileOptionRowView(icon: "lock.fill", title: "Change Password", subtitle: "Update your password", showChevron: true, showToggle: false, toggleState: .constant(false))
                             }
+                            .buttonStyle(PlainButtonStyle())
 
                             ProfileOptionRowView(icon: "faceid", title: "Face ID / Touch ID", subtitle: "Manage your device security", showChevron: false, showToggle: true, toggleState: $isFaceIDEnabled) {
                                 print("Face ID toggle changed to \(isFaceIDEnabled)")
                             }
                             
-                    
                             Button(action: { viewModel.logout() }) {
                                 ProfileOptionRowView(icon: "arrow.right.square.fill", title: "Log out", subtitle: "Log out from the application", showChevron: true, showToggle: false, toggleState: .constant(false))
-                                }
-
-                            
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
                         .padding(.vertical)
                         .background(Color.white)
@@ -84,6 +84,7 @@ struct ProfileScreenView: View {
                             NavigationLink(destination: FAQScreenView()) {
                                 ProfileOptionRowView(icon: "questionmark.circle.fill", title: "Frequently Asked Questions (FAQ)", subtitle: "Answers to common questions", showChevron: true, showToggle: false, toggleState: .constant(false))
                             }
+                            .buttonStyle(PlainButtonStyle())
                         }
                         .padding(.vertical)
                         .background(Color.white)
@@ -96,16 +97,14 @@ struct ProfileScreenView: View {
             .navigationTitle("My Profile")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                // Title in center
                 ToolbarItem(placement: .principal) {
                     Text("My Profile")
                         .font(.headline)
                         .foregroundColor(.white)
                 }
 
-                // Bottom bar
                 ToolbarItemGroup(placement: .bottomBar) {
-                    NavigationLink(destination: HomeScreenView()) {
+                    NavigationLink(destination: HomeScreenView(viewModel: viewModel)) {
                         VStack {
                             Image(systemName: "house.fill")
                                 .resizable()
@@ -114,10 +113,12 @@ struct ProfileScreenView: View {
                             Text("Home")
                                 .foregroundColor(.blue)
                         }
-                        .padding(.top, 10)
+                        .padding(.top, 20)
+                        .padding(.leading, 20)
                     }
+                    .buttonStyle(PlainButtonStyle())
 
-                    NavigationLink(destination: ProfileScreenView(viewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))) {
+                    NavigationLink(destination: ProfileScreenView(viewModel: viewModel)) {
                         VStack {
                             Image(systemName: "person.fill")
                                 .resizable()
@@ -126,8 +127,10 @@ struct ProfileScreenView: View {
                             Text("Profile")
                                 .foregroundColor(.blue)
                         }
-                        .padding(.top, 10)
+                        .padding(.top, 20)
+                        .padding(.trailing, 20)
                     }
+                    .buttonStyle(PlainButtonStyle())
                 }
             }
             .toolbarBackground(.white, for: .bottomBar)

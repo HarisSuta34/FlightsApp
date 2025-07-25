@@ -29,11 +29,11 @@ struct RegisterSheetView: View {
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
                     .focused($focusedField, equals: .email)
-                    .onChange(of: viewModel.email) { _, _ in
-                        viewModel.validateEmailFormat()
+                    .onTapGesture {
+                        viewModel.emailFieldTouched = true
                     }
                     .onChange(of: focusedField) { _, newFocus in
-                        if newFocus != .email {
+                        if newFocus != .email && viewModel.emailFieldTouched {
                             viewModel.validateEmailFormat()
                         }
                     }
@@ -51,10 +51,11 @@ struct RegisterSheetView: View {
                     .background(Color.gray.opacity(0.1))
                     .cornerRadius(10)
                     .focused($focusedField, equals: .password)
-                    .onChange(of: viewModel.password) { _, _ in
+                    .onTapGesture {
+                        viewModel.passwordFieldTouched = true
                     }
                     .onChange(of: focusedField) { _, newFocus in
-                        if newFocus != .password {
+                        if newFocus != .password && viewModel.passwordFieldTouched {
                             viewModel.validatePasswordLength()
                         }
                     }
@@ -68,6 +69,8 @@ struct RegisterSheetView: View {
                 }
                 
                 Button {
+                    viewModel.emailFieldTouched = true
+                    viewModel.passwordFieldTouched = true
                     viewModel.registerUser()
                 } label: {
                     Text("Register")
@@ -75,9 +78,10 @@ struct RegisterSheetView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.blue)
+                        .background(viewModel.isRegisterButtonEnabled ? Color.blue : Color.gray)
                         .cornerRadius(10)
                 }
+                .disabled(!viewModel.isRegisterButtonEnabled)
                 
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
@@ -95,6 +99,12 @@ struct RegisterSheetView: View {
         }
         .onTapGesture {
             focusedField = nil
+        }
+        .onAppear {
+            viewModel.emailFieldTouched = false
+            viewModel.passwordFieldTouched = false
+            viewModel.emailValidationError = nil
+            viewModel.passwordValidationError = nil
         }
     }
 }
