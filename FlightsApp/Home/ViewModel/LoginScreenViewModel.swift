@@ -20,7 +20,7 @@ class LoginScreenViewModel: ObservableObject {
             validatePasswordLengthInternal()
         }
     }
-    @Published var keepSignedIn: Bool = false
+    @Published var keepSignedIn: Bool = false // Stanje checkboxa
     @Published var showPassword: Bool = false
     
     @Published var isLoggedIn: Bool = false
@@ -42,6 +42,8 @@ class LoginScreenViewModel: ObservableObject {
     
     init(dataManager: AuthenticationAndDataManagement = LoginDataManager.shared) {
         self.dataManager = dataManager
+        // Učitaj keepSignedIn stanje iz UserDefaults pri inicijalizaciji
+        self.keepSignedIn = UserDefaults.standard.bool(forKey: "keepSignedIn")
         self.isLoggedIn = dataManager.isAuthenticated
         self.email = dataManager.isAuthenticated ? (Auth.auth().currentUser?.email ?? "") : ""
         
@@ -144,7 +146,9 @@ class LoginScreenViewModel: ObservableObject {
                     self.isLoggedIn = true
                     self.errorMessage = nil
                     self.email = authResult.user.email ?? ""
-                    print("Login successful for \(authResult.user.email ?? "unknown user")")
+                    // NOVO: Sačuvaj keepSignedIn stanje u UserDefaults
+                    UserDefaults.standard.set(self.keepSignedIn, forKey: "keepSignedIn")
+                    print("Login successful for \(authResult.user.email ?? "unknown user"). KeepSignedIn: \(self.keepSignedIn)")
                 case .failure(let error):
                     self.isLoggedIn = false
                     self.errorMessage = error.localizedDescription
@@ -180,8 +184,9 @@ class LoginScreenViewModel: ObservableObject {
                     self.errorMessage = nil
                     self.showRegisterScreen = false
                     self.email = authResult.user.email ?? ""
-                    print("Registration successful for \(authResult.user.email ?? "unknown user")")
-                    // Resetuj validacijske flagove nakon uspješne registracije
+                    // NOVO: Sačuvaj keepSignedIn stanje u UserDefaults nakon registracije
+                    UserDefaults.standard.set(self.keepSignedIn, forKey: "keepSignedIn")
+                    print("Registration successful for \(authResult.user.email ?? "unknown user"). KeepSignedIn: \(self.keepSignedIn)")
                     self.emailFieldTouched = false
                     self.passwordFieldTouched = false
                     self.emailValidationError = nil
@@ -206,7 +211,8 @@ class LoginScreenViewModel: ObservableObject {
                     self.isLoggedIn = false
                     self.email = ""
                     self.password = ""
-                    self.keepSignedIn = false
+                    self.keepSignedIn = false // Resetuj stanje checkboxa
+                    UserDefaults.standard.set(false, forKey: "keepSignedIn")
                     self.errorMessage = nil
                     self.emailValidationError = nil
                     self.passwordValidationError = nil
@@ -269,7 +275,8 @@ class LoginScreenViewModel: ObservableObject {
                     self.isLoggedIn = true
                     self.errorMessage = nil
                     self.email = authResult.user.email ?? ""
-                    print("Google sign-in successful and linked with Firebase for: \(authResult.user.email ?? "unknown user")")
+                    UserDefaults.standard.set(self.keepSignedIn, forKey: "keepSignedIn")
+                    print("Google sign-in successful and linked with Firebase for: \(authResult.user.email ?? "unknown user"). KeepSignedIn: \(self.keepSignedIn)")
                 case .failure(let error):
                     self.isLoggedIn = false
                     self.errorMessage = "Firebase Google sign-in failed: \(error.localizedDescription)"

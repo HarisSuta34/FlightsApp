@@ -35,6 +35,13 @@ struct FlightsAppApp: App {
                 }
 
                 loginViewModel.loadLoginStateIfNeeded()
+                
+                // NOVO: Proveri "Keep me signed in" preferencu pri pokretanju
+                let keepSignedInPreference = UserDefaults.standard.bool(forKey: "keepSignedIn")
+                if loginViewModel.isLoggedIn && !keepSignedInPreference {
+                    print("User is logged in but 'Keep me signed in' was false. Logging out automatically.")
+                    loginViewModel.logout() // Automatski odjavi korisnika
+                }
 
                 GIDSignIn.sharedInstance.restorePreviousSignIn { user, error in
                     self.loginViewModel.handleGoogleSignInResult(user: user, error: error)
