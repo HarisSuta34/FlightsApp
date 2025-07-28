@@ -8,8 +8,9 @@ protocol AuthenticationAndDataManagement {
     func loginUser(email: String, password: String, completion: @escaping (Result<AuthDataResult, Error>) -> Void)
     func signOut(completion: @escaping (Result<Void, Error>) -> Void)
     func signInWithGoogle(idToken: String, accessToken: String, completion: @escaping (Result<AuthDataResult, Error>) -> Void)
-    func saveUserData(uid: String, email: String, completion: @escaping (Result<Void, Error>) -> Void)
+    func saveUserData(uid: String, email: String, username: String?, completion: @escaping (Result<Void, Error>) -> Void)
     func getUserData(uid: String, completion: @escaping (Result<[String: Any], Error>) -> Void)
+    func updateUserData(uid: String, data: [String: Any], completion: @escaping (Result<Void, Error>) -> Void)
     
     var isAuthenticated: Bool { get }
     var currentUserID: String? { get }
@@ -42,7 +43,7 @@ class LoginDataManager: AuthenticationAndDataManagement {
                 completion(.failure(AuthError.unknownError))
                 return
             }
-            self.saveUserData(uid: authResult.user.uid, email: email) { result in
+            self.saveUserData(uid: authResult.user.uid, email: email, username: nil) { result in
                 switch result {
                 case .success:
                     completion(.success(authResult))
@@ -89,7 +90,7 @@ class LoginDataManager: AuthenticationAndDataManagement {
                 completion(.failure(AuthError.unknownError))
                 return
             }
-            self.saveUserData(uid: authResult.user.uid, email: authResult.user.email ?? "") { result in
+            self.saveUserData(uid: authResult.user.uid, email: authResult.user.email ?? "", username: nil) { result in
                 switch result {
                 case .success:
                     completion(.success(authResult))
@@ -100,9 +101,24 @@ class LoginDataManager: AuthenticationAndDataManagement {
         }
     }
 
-    func saveUserData(uid: String, email: String, completion: @escaping (Result<Void, Error>) -> Void) {
+    func saveUserData(uid: String, email: String, username: String?, completion: @escaping (Result<Void, Error>) -> Void) {
         let userRef = db.collection("users").document(uid)
-        userRef.setData(["email": email, "lastLogin": FieldValue.serverTimestamp()], merge: true) { error in
+        var dataToSave: [String: Any] = ["email": email, "lastLogin": FieldValue.serverTimestamp()]
+        if let username = username {
+            dataToSave["username"] = username // Dodaj username ako postoji
+        }
+        userRef.setData(dataToSave, merge: true) { error in
+            if let error = error {
+                completion(.failure(error))
+            } else {
+                completion(.success(()))
+            }
+        }
+    }
+
+    func updateUserData(uid: String, data: [String: Any], completion: @escaping (Result<Void, Error>) -> Void) {
+        let userRef = db.collection("users").document(uid)
+        userRef.updateData(data) { error in
             if let error = error {
                 completion(.failure(error))
             } else {
@@ -130,6 +146,7 @@ class LoginDataManager: AuthenticationAndDataManagement {
 enum AuthError: Error, LocalizedError {
     case unknownError
     case userDataNotFound
+    case notLoggedIn
     
     var errorDescription: String? {
         switch self {
@@ -137,6 +154,8 @@ enum AuthError: Error, LocalizedError {
             return "Došlo je do nepoznate greške. Pokušajte ponovo."
         case .userDataNotFound:
             return "Korisnički podaci nisu pronađeni u bazi."
+        case .notLoggedIn:
+            return "Korisnik nije prijavljen."
         }
     }
 }

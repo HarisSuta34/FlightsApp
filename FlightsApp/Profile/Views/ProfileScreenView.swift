@@ -10,7 +10,7 @@ struct ProfileScreenView: View {
                 .ignoresSafeArea(.all)
 
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: 10) {
                     HStack(spacing: 15) {
                         Image(systemName: "person.circle.fill")
                             .resizable()
@@ -21,7 +21,7 @@ struct ProfileScreenView: View {
                             .overlay(Circle().stroke(Color.white, lineWidth: 2))
 
                         VStack(alignment: .leading) {
-                            Text(viewModel.email.isEmpty ? "User" : viewModel.email)
+                            Text(viewModel.username ?? viewModel.email.components(separatedBy: "@").first ?? "User")
                                 .font(.title2)
                                 .fontWeight(.bold)
                                 .foregroundColor(.white)
@@ -31,7 +31,9 @@ struct ProfileScreenView: View {
                         }
                         Spacer()
                         Button(action: {
-                            print("Edit profile tapped")
+                            viewModel.newUsernameInput = viewModel.username ?? ""
+                            viewModel.usernameUpdateErrorMessage = nil
+                            viewModel.showEditProfileSheet = true
                         }) {
                             Image(systemName: "pencil.circle.fill")
                                 .resizable()
@@ -69,7 +71,7 @@ struct ProfileScreenView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
-                    .padding(.vertical)
+                    .padding(.vertical, 10)
                     .background(Color.white)
                     .cornerRadius(15)
                     .padding(.horizontal)
@@ -82,15 +84,16 @@ struct ProfileScreenView: View {
 
                         NavigationLink(destination: FAQScreenView()) {
                             ProfileOptionRowView(icon: "questionmark.circle.fill", title: "Frequently Asked Questions (FAQ)", subtitle: "Answers to common questions", showChevron: true, showToggle: false, toggleState: .constant(false))
+                          
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
-                    .padding(.vertical)
+                    .padding(.vertical, 10)
                     .background(Color.white)
                     .cornerRadius(15)
                     .padding(.horizontal)
                 }
-                .padding(.vertical)
+                .padding(.vertical, 10)
             }
         }
         .navigationTitle("My Profile")
@@ -102,9 +105,14 @@ struct ProfileScreenView: View {
                     .foregroundColor(.white)
             }
         }
-        .onChange(of: viewModel.isLoggedIn) { oldValue, newValue in
-            if !newValue {
-                print("User logged out. ProfileScreenView should be dismissed.")
+        .sheet(isPresented: $viewModel.showEditProfileSheet) {
+            EditProfileSheetView(viewModel: viewModel)
+        }
+        .onChange(of: viewModel.showEditProfileSheet) { oldValue, newValue in
+            if oldValue && !newValue {
+                if let uid = viewModel.dataManager.currentUserID {
+                    viewModel.fetchUsername(for: uid) 
+                }
             }
         }
     }

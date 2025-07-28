@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import GoogleSignIn
 import FirebaseAuth
+import FirebaseFirestore
 
 class LoginScreenViewModel: ObservableObject {
     @Published var email: String = "" {
@@ -38,15 +39,24 @@ class LoginScreenViewModel: ObservableObject {
     
     @Published var isLoadingAuth: Bool = false
 
-    private let dataManager: AuthenticationAndDataManagement
+    @Published var username: String?
+    @Published var showEditProfileSheet: Bool = false
+    @Published var newUsernameInput: String = ""
+    @Published var usernameUpdateErrorMessage: String?
+    @Published var isUpdatingUsername: Bool = false
+
+     let dataManager: AuthenticationAndDataManagement // Nema više 'private'
     
     init(dataManager: AuthenticationAndDataManagement = LoginDataManager.shared) {
         self.dataManager = dataManager
-        // Učitaj keepSignedIn stanje iz UserDefaults pri inicijalizaciji
         self.keepSignedIn = UserDefaults.standard.bool(forKey: "keepSignedIn")
         self.isLoggedIn = dataManager.isAuthenticated
         self.email = dataManager.isAuthenticated ? (Auth.auth().currentUser?.email ?? "") : ""
         
+        if isLoggedIn, let uid = dataManager.currentUserID {
+            fetchUsername(for: uid)
+        }
+
         validateEmailFormatInternal()
         validatePasswordLengthInternal()
     }
@@ -54,6 +64,9 @@ class LoginScreenViewModel: ObservableObject {
     func loadLoginStateIfNeeded() {
         self.isLoggedIn = dataManager.isAuthenticated
         self.email = dataManager.isAuthenticated ? (Auth.auth().currentUser?.email ?? "") : ""
+        if isLoggedIn, let uid = dataManager.currentUserID {
+            fetchUsername(for: uid)
+        }
     }
 
     private func validateEmailFormatInternal() {
@@ -146,9 +159,9 @@ class LoginScreenViewModel: ObservableObject {
                     self.isLoggedIn = true
                     self.errorMessage = nil
                     self.email = authResult.user.email ?? ""
-                    // NOVO: Sačuvaj keepSignedIn stanje u UserDefaults
                     UserDefaults.standard.set(self.keepSignedIn, forKey: "keepSignedIn")
                     print("Login successful for \(authResult.user.email ?? "unknown user"). KeepSignedIn: \(self.keepSignedIn)")
+                    self.fetchUsername(for: authResult.user.uid)
                 case .failure(let error):
                     self.isLoggedIn = false
                     self.errorMessage = error.localizedDescription
@@ -184,13 +197,13 @@ class LoginScreenViewModel: ObservableObject {
                     self.errorMessage = nil
                     self.showRegisterScreen = false
                     self.email = authResult.user.email ?? ""
-                    // NOVO: Sačuvaj keepSignedIn stanje u UserDefaults nakon registracije
                     UserDefaults.standard.set(self.keepSignedIn, forKey: "keepSignedIn")
                     print("Registration successful for \(authResult.user.email ?? "unknown user"). KeepSignedIn: \(self.keepSignedIn)")
                     self.emailFieldTouched = false
                     self.passwordFieldTouched = false
                     self.emailValidationError = nil
                     self.passwordValidationError = nil
+                    self.fetchUsername(for: authResult.user.uid)
                 case .failure(let error):
                     self.isLoggedIn = false
                     self.errorMessage = error.localizedDescription
@@ -211,7 +224,7 @@ class LoginScreenViewModel: ObservableObject {
                     self.isLoggedIn = false
                     self.email = ""
                     self.password = ""
-                    self.keepSignedIn = false // Resetuj stanje checkboxa
+                    self.keepSignedIn = false
                     UserDefaults.standard.set(false, forKey: "keepSignedIn")
                     self.errorMessage = nil
                     self.emailValidationError = nil
@@ -220,6 +233,9 @@ class LoginScreenViewModel: ObservableObject {
                     self.isPasswordLongEnough = false
                     self.emailFieldTouched = false
                     self.passwordFieldTouched = false
+                    self.username = nil
+                    self.newUsernameInput = ""
+                    self.usernameUpdateErrorMessage = nil
                     print("User logged out from Firebase.")
                     GIDSignIn.sharedInstance.signOut()
                     print("Google user logged out.")
@@ -277,6 +293,8 @@ class LoginScreenViewModel: ObservableObject {
                     self.email = authResult.user.email ?? ""
                     UserDefaults.standard.set(self.keepSignedIn, forKey: "keepSignedIn")
                     print("Google sign-in successful and linked with Firebase for: \(authResult.user.email ?? "unknown user"). KeepSignedIn: \(self.keepSignedIn)")
+                    // NOVO: Dohvati username nakon uspješne Google prijave
+                    self.fetchUsername(for: authResult.user.uid)
                 case .failure(let error):
                     self.isLoggedIn = false
                     self.errorMessage = "Firebase Google sign-in failed: \(error.localizedDescription)"
@@ -285,4 +303,53 @@ class LoginScreenViewModel: ObservableObject {
             }
         }
     }
+    
+    func fetchUsername(for uid: String) {
+        dataManager.getUserData(uid: uid) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                switch result {
+                case .success(let userData):
+                    self.username = userData["username"] as? String
+                    self.newUsernameInput = self.username ?? ""
+                    print("Fetched username: \(self.username ?? "N/A") for UID: \(uid)")
+                case .failure(let error):
+                    print("Error fetching user data for username: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
+    func updateUsername() {
+        let trimmedUsername = newUsernameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedUsername.isEmpty else {
+            usernameUpdateErrorMessage = "Korisničko ime ne može biti prazno."
+            return
+        }
+
+        guard isLoggedIn, let uid = dataManager.currentUserID else {
+            usernameUpdateErrorMessage = "Korisnik nije prijavljen."
+            return
+        }
+
+        usernameUpdateErrorMessage = nil
+        isUpdatingUsername = true
+        
+        dataManager.updateUserData(uid: uid, data: ["username": trimmedUsername]) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.isUpdatingUsername = false
+                switch result {
+                case .success:
+                    self.username = trimmedUsername
+                    self.showEditProfileSheet = false 
+                    print("Username updated successfully to: \(trimmedUsername)")
+                case .failure(let error):
+                    self.usernameUpdateErrorMessage = "Greška pri ažuriranju korisničkog imena: \(error.localizedDescription)"
+                    print("Failed to update username: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
 }
+
