@@ -45,7 +45,11 @@ class LoginScreenViewModel: ObservableObject {
     @Published var usernameUpdateErrorMessage: String?
     @Published var isUpdatingUsername: Bool = false
 
-     let dataManager: AuthenticationAndDataManagement // Nema više 'private'
+    @Published var loginProvider: String = "Email/Password"
+
+    @Published var creationDate: Date?
+
+    internal let dataManager: AuthenticationAndDataManagement
     
     init(dataManager: AuthenticationAndDataManagement = LoginDataManager.shared) {
         self.dataManager = dataManager
@@ -55,6 +59,10 @@ class LoginScreenViewModel: ObservableObject {
         
         if isLoggedIn, let uid = dataManager.currentUserID {
             fetchUsername(for: uid)
+            if let currentUser = Auth.auth().currentUser {
+                self.loginProvider = currentUser.providerData.first?.providerID == "google.com" ? "Google" : "Email/Password"
+                self.creationDate = currentUser.metadata.creationDate
+            }
         }
 
         validateEmailFormatInternal()
@@ -66,6 +74,11 @@ class LoginScreenViewModel: ObservableObject {
         self.email = dataManager.isAuthenticated ? (Auth.auth().currentUser?.email ?? "") : ""
         if isLoggedIn, let uid = dataManager.currentUserID {
             fetchUsername(for: uid)
+            if let currentUser = Auth.auth().currentUser {
+                self.loginProvider = currentUser.providerData.first?.providerID == "google.com" ? "Google" : "Email/Password"
+                // NOVO: Postavi datum kreiranja pri učitavanju stanja
+                self.creationDate = currentUser.metadata.creationDate
+            }
         }
     }
 
@@ -162,6 +175,9 @@ class LoginScreenViewModel: ObservableObject {
                     UserDefaults.standard.set(self.keepSignedIn, forKey: "keepSignedIn")
                     print("Login successful for \(authResult.user.email ?? "unknown user"). KeepSignedIn: \(self.keepSignedIn)")
                     self.fetchUsername(for: authResult.user.uid)
+                    self.loginProvider = "Email/Password"
+                    // NOVO: Postavi datum kreiranja nakon prijave
+                    self.creationDate = authResult.user.metadata.creationDate
                 case .failure(let error):
                     self.isLoggedIn = false
                     self.errorMessage = error.localizedDescription
@@ -204,6 +220,9 @@ class LoginScreenViewModel: ObservableObject {
                     self.emailValidationError = nil
                     self.passwordValidationError = nil
                     self.fetchUsername(for: authResult.user.uid)
+                    self.loginProvider = "Email/Password"
+                    // NOVO: Postavi datum kreiranja nakon registracije
+                    self.creationDate = authResult.user.metadata.creationDate
                 case .failure(let error):
                     self.isLoggedIn = false
                     self.errorMessage = error.localizedDescription
@@ -236,6 +255,8 @@ class LoginScreenViewModel: ObservableObject {
                     self.username = nil
                     self.newUsernameInput = ""
                     self.usernameUpdateErrorMessage = nil
+                    self.loginProvider = "Email/Password"
+                    self.creationDate = nil // NOVO: Resetuj datum kreiranja nakon odjave
                     print("User logged out from Firebase.")
                     GIDSignIn.sharedInstance.signOut()
                     print("Google user logged out.")
@@ -293,8 +314,10 @@ class LoginScreenViewModel: ObservableObject {
                     self.email = authResult.user.email ?? ""
                     UserDefaults.standard.set(self.keepSignedIn, forKey: "keepSignedIn")
                     print("Google sign-in successful and linked with Firebase for: \(authResult.user.email ?? "unknown user"). KeepSignedIn: \(self.keepSignedIn)")
-                    // NOVO: Dohvati username nakon uspješne Google prijave
                     self.fetchUsername(for: authResult.user.uid)
+                    self.loginProvider = "Google"
+                    // NOVO: Postavi datum kreiranja nakon Google prijave
+                    self.creationDate = authResult.user.metadata.creationDate
                 case .failure(let error):
                     self.isLoggedIn = false
                     self.errorMessage = "Firebase Google sign-in failed: \(error.localizedDescription)"
@@ -304,6 +327,7 @@ class LoginScreenViewModel: ObservableObject {
         }
     }
     
+    // MARK: - Username Management
     func fetchUsername(for uid: String) {
         dataManager.getUserData(uid: uid) { [weak self] result in
             DispatchQueue.main.async {
@@ -342,7 +366,7 @@ class LoginScreenViewModel: ObservableObject {
                 switch result {
                 case .success:
                     self.username = trimmedUsername
-                    self.showEditProfileSheet = false 
+                    self.showEditProfileSheet = false
                     print("Username updated successfully to: \(trimmedUsername)")
                 case .failure(let error):
                     self.usernameUpdateErrorMessage = "Greška pri ažuriranju korisničkog imena: \(error.localizedDescription)"
@@ -352,4 +376,3 @@ class LoginScreenViewModel: ObservableObject {
         }
     }
 }
-

@@ -52,8 +52,8 @@ struct ProfileScreenView: View {
                             .foregroundColor(.gray)
                             .padding(.leading)
 
-                        Button(action: { print("My Account tapped") }) {
-                            ProfileOptionRowView(icon: "person.fill", title: "My Account", subtitle: "Edit your details", showChevron: true, showToggle: false, toggleState: .constant(false))
+                        NavigationLink(destination: MyAccountDetailsView(viewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))) {
+                            ProfileOptionRowView(icon: "person.fill", title: "My Account", subtitle: "See your account details", showChevron: true, showToggle: false, toggleState: .constant(false))
                         }
                         .buttonStyle(PlainButtonStyle())
 
