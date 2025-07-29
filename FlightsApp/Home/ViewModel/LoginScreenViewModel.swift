@@ -48,7 +48,13 @@ class LoginScreenViewModel: ObservableObject {
     @Published var loginProvider: String = "Email/Password"
 
     @Published var creationDate: Date?
+    
+    @Published var navigateToChangePassword = false
+    @Published var showAlert = false
+    @Published var alertTitle = ""
+    @Published var alertMessage = ""
 
+    
     internal let dataManager: AuthenticationAndDataManagement
     
     init(dataManager: AuthenticationAndDataManagement = LoginDataManager.shared) {
@@ -327,7 +333,6 @@ class LoginScreenViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Username Management
     func fetchUsername(for uid: String) {
         dataManager.getUserData(uid: uid) { [weak self] result in
             DispatchQueue.main.async {
@@ -347,7 +352,7 @@ class LoginScreenViewModel: ObservableObject {
     func updateUsername() {
         let trimmedUsername = newUsernameInput.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedUsername.isEmpty else {
-            usernameUpdateErrorMessage = "Korisničko ime ne može biti prazno."
+            usernameUpdateErrorMessage = "Username cannot be empty"
             return
         }
 
@@ -375,4 +380,40 @@ class LoginScreenViewModel: ObservableObject {
             }
         }
     }
+    
+    func handleChangePassword(onNotAllowed: @escaping () -> Void) {
+        if let user = Auth.auth().currentUser {
+            if user.providerData.contains(where: { $0.providerID == "password" }) {
+                self.navigateToChangePassword = true
+            } else {
+                onNotAllowed()
+            }
+        }
+    }
+    
+    func changePassword(to newPassword: String, confirmPassword: String, onSuccess: @escaping () -> Void, onError: @escaping (String) -> Void) {
+        guard !newPassword.isEmpty, !confirmPassword.isEmpty else {
+            onError("Please fill in all fields.")
+            return
+        }
+
+        guard newPassword == confirmPassword else {
+            onError("Passwords do not match.")
+            return
+        }
+
+        guard let user = Auth.auth().currentUser else {
+            onError("No user is currently logged in.")
+            return
+        }
+
+        user.updatePassword(to: newPassword) { error in
+            if let error = error {
+                onError("Failed to update password: \(error.localizedDescription)")
+            } else {
+                onSuccess()
+            }
+        }
+    }
+
 }

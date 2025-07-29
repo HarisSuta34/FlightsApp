@@ -57,7 +57,13 @@ struct ProfileScreenView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
 
-                        Button(action: { print("Change Password tapped") }) {
+                        Button(action: {
+                            viewModel.handleChangePassword {
+                                viewModel.alertTitle = "Not Allowed"
+                                viewModel.alertMessage = "You signed in using Google. Password change is not allowed."
+                                viewModel.showAlert = true
+                            }
+                        }) {
                             ProfileOptionRowView(icon: "lock.fill", title: "Change Password", subtitle: "Update your password", showChevron: true, showToggle: false, toggleState: .constant(false))
                         }
                         .buttonStyle(PlainButtonStyle())
@@ -108,10 +114,20 @@ struct ProfileScreenView: View {
         .sheet(isPresented: $viewModel.showEditProfileSheet) {
             EditProfileSheetView(viewModel: viewModel)
         }
+        .navigationDestination(isPresented: $viewModel.navigateToChangePassword) {
+            PasswordChangeView(viewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))
+        }
+        .alert(isPresented: $viewModel.showAlert) {
+            Alert(
+                title: Text(viewModel.alertTitle),
+                message: Text(viewModel.alertMessage),
+                dismissButton: .default(Text("OK"))
+            )
+        }
         .onChange(of: viewModel.showEditProfileSheet) { oldValue, newValue in
             if oldValue && !newValue {
                 if let uid = viewModel.dataManager.currentUserID {
-                    viewModel.fetchUsername(for: uid) 
+                    viewModel.fetchUsername(for: uid)
                 }
             }
         }
