@@ -29,17 +29,15 @@ struct LoginSheetView: View {
                 
                 HStack {
                     ZStack {
-                        // SecureField se uvijek prikazuje, ali se skriva/prikazuje pomoću opacity
                         SecureField("Password", text: $viewModel.password)
                             .opacity(viewModel.showPassword ? 0 : 1)
-                            .disabled(viewModel.showPassword) // Onemogućava interakciju kada je skriven
+                            .disabled(viewModel.showPassword)
                         
-                        // TextField se uvijek prikazuje, ali se skriva/prikazuje pomoću opacity
                         TextField("Password", text: $viewModel.password)
                             .opacity(viewModel.showPassword ? 1 : 0)
-                            .disabled(!viewModel.showPassword) // Onemogućava interakciju kada je skriven
+                            .disabled(!viewModel.showPassword)
                     }
-                    .animation(.none, value: viewModel.showPassword) // Uklanjamo animaciju da ne glitcha
+                    .animation(.none, value: viewModel.showPassword)
 
                     Button {
                         viewModel.showPassword.toggle()

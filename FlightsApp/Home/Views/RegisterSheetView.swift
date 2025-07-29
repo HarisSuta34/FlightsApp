@@ -68,13 +68,12 @@ struct RegisterSheetView: View {
                         .padding(.leading)
                 }
                 
-                // NOVO: Checkbox "Keep me signed in" na ekranu za registraciju
                 Toggle(isOn: $viewModel.keepSignedIn) {
                     Text("Keep me signed in")
                 }
                 .toggleStyle(CheckboxToggleStyle())
                 .foregroundColor(.black)
-                .padding(.top, 5) // Dodajte malo paddinga iznad checkboxa
+                .padding(.top, 5) 
                 
                 Button {
                     viewModel.emailFieldTouched = true

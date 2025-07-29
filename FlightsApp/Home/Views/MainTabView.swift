@@ -32,7 +32,7 @@ struct MainTabView: View {
         .onAppear {
             
             UITabBar.appearance().backgroundColor = UIColor.white
-            UITabBar.appearance().tintColor = UIColor.blue // Ovo se obično kontrolira preko .accentColor
+            UITabBar.appearance().tintColor = UIColor.blue 
         }
     }
 }

@@ -21,7 +21,7 @@ class LoginScreenViewModel: ObservableObject {
             validatePasswordLengthInternal()
         }
     }
-    @Published var keepSignedIn: Bool = false // Stanje checkboxa
+    @Published var keepSignedIn: Bool = false
     @Published var showPassword: Bool = false
     
     @Published var isLoggedIn: Bool = false
