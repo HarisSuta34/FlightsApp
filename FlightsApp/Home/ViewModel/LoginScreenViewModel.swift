@@ -82,7 +82,6 @@ class LoginScreenViewModel: ObservableObject {
             fetchUsername(for: uid)
             if let currentUser = Auth.auth().currentUser {
                 self.loginProvider = currentUser.providerData.first?.providerID == "google.com" ? "Google" : "Email/Password"
-                // NOVO: Postavi datum kreiranja pri učitavanju stanja
                 self.creationDate = currentUser.metadata.creationDate
             }
         }
@@ -182,7 +181,6 @@ class LoginScreenViewModel: ObservableObject {
                     print("Login successful for \(authResult.user.email ?? "unknown user"). KeepSignedIn: \(self.keepSignedIn)")
                     self.fetchUsername(for: authResult.user.uid)
                     self.loginProvider = "Email/Password"
-                    // NOVO: Postavi datum kreiranja nakon prijave
                     self.creationDate = authResult.user.metadata.creationDate
                 case .failure(let error):
                     self.isLoggedIn = false
@@ -227,7 +225,6 @@ class LoginScreenViewModel: ObservableObject {
                     self.passwordValidationError = nil
                     self.fetchUsername(for: authResult.user.uid)
                     self.loginProvider = "Email/Password"
-                    // NOVO: Postavi datum kreiranja nakon registracije
                     self.creationDate = authResult.user.metadata.creationDate
                 case .failure(let error):
                     self.isLoggedIn = false
@@ -262,7 +259,7 @@ class LoginScreenViewModel: ObservableObject {
                     self.newUsernameInput = ""
                     self.usernameUpdateErrorMessage = nil
                     self.loginProvider = "Email/Password"
-                    self.creationDate = nil // NOVO: Resetuj datum kreiranja nakon odjave
+                    self.creationDate = nil
                     print("User logged out from Firebase.")
                     GIDSignIn.sharedInstance.signOut()
                     print("Google user logged out.")
@@ -322,7 +319,6 @@ class LoginScreenViewModel: ObservableObject {
                     print("Google sign-in successful and linked with Firebase for: \(authResult.user.email ?? "unknown user"). KeepSignedIn: \(self.keepSignedIn)")
                     self.fetchUsername(for: authResult.user.uid)
                     self.loginProvider = "Google"
-                    // NOVO: Postavi datum kreiranja nakon Google prijave
                     self.creationDate = authResult.user.metadata.creationDate
                 case .failure(let error):
                     self.isLoggedIn = false
@@ -407,13 +403,19 @@ class LoginScreenViewModel: ObservableObject {
             return
         }
 
-        user.updatePassword(to: newPassword) { error in
-            if let error = error {
-                onError("Failed to update password: \(error.localizedDescription)")
-            } else {
-                onSuccess()
+        user.updatePassword(to: newPassword) { [weak self] error in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                if let error = error {
+                    onError("Failed to update password: \(error.localizedDescription)")
+                } else {
+                    onSuccess()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+                        self.logout()
+                        print("Korisnik automatski odjavljen nakon promjene lozinke.")
+                    }
+                }
             }
         }
     }
-
 }

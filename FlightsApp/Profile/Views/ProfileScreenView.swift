@@ -52,22 +52,22 @@ struct ProfileScreenView: View {
                             .foregroundColor(.gray)
                             .padding(.leading)
 
-                        NavigationLink(destination: MyAccountDetailsView(viewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))) {
+                        NavigationLink(destination: MyAccountDetailsView(viewModel: viewModel)) {
                             ProfileOptionRowView(icon: "person.fill", title: "My Account", subtitle: "See your account details", showChevron: true, showToggle: false, toggleState: .constant(false))
                         }
                         .buttonStyle(PlainButtonStyle())
 
                         Button(action: {
                             viewModel.handleChangePassword {
-                                viewModel.alertTitle = "Not Allowed"
-                                viewModel.alertMessage = "You signed in using Google. Password change is not allowed."
+                                viewModel.alertTitle = "Nije dozvoljeno"
+                                viewModel.alertMessage = "Lozinka se ne može mijenjati za Google račune. Promijenite je direktno u Google postavkama."
                                 viewModel.showAlert = true
                             }
                         }) {
                             ProfileOptionRowView(icon: "lock.fill", title: "Change Password", subtitle: "Update your password", showChevron: true, showToggle: false, toggleState: .constant(false))
                         }
                         .buttonStyle(PlainButtonStyle())
-
+                        
                         ProfileOptionRowView(icon: "faceid", title: "Face ID / Touch ID", subtitle: "Manage your device security", showChevron: false, showToggle: true, toggleState: $isFaceIDEnabled) {
                             print("Face ID toggle changed to \(isFaceIDEnabled)")
                         }
@@ -90,7 +90,6 @@ struct ProfileScreenView: View {
 
                         NavigationLink(destination: FAQScreenView()) {
                             ProfileOptionRowView(icon: "questionmark.circle.fill", title: "Frequently Asked Questions (FAQ)", subtitle: "Answers to common questions", showChevron: true, showToggle: false, toggleState: .constant(false))
-                          
                         }
                         .buttonStyle(PlainButtonStyle())
                     }
@@ -115,7 +114,7 @@ struct ProfileScreenView: View {
             EditProfileSheetView(viewModel: viewModel)
         }
         .navigationDestination(isPresented: $viewModel.navigateToChangePassword) {
-            PasswordChangeView(viewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))
+            PasswordChangeView(viewModel: viewModel)
         }
         .alert(isPresented: $viewModel.showAlert) {
             Alert(

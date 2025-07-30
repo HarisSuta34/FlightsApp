@@ -2,13 +2,19 @@ import SwiftUI
 
 struct MyAccountDetailsView: View {
     @ObservedObject var viewModel: LoginScreenViewModel
-
+    @Environment(\.dismiss) var dismiss
+    
     var body: some View {
         ZStack {
             Color(red: 36/255, green: 97/255, blue: 223/255)
                 .ignoresSafeArea(.all)
 
             VStack(spacing: 20) {
+                Text("Account Details")
+                    .font(.largeTitle)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                    .padding(.bottom, 20)
 
                 VStack(alignment: .leading, spacing: 15) {
                     AccountDetailRowView(title: "Email", value: viewModel.email, icon: "envelope.fill")
@@ -28,7 +34,6 @@ struct MyAccountDetailsView: View {
 
                 Spacer()
             }
-            .padding(.top, 75)
         }
         .navigationTitle("Account Details")
         .navigationBarTitleDisplayMode(.inline)
@@ -38,11 +43,18 @@ struct MyAccountDetailsView: View {
                     .font(.headline)
                     .foregroundColor(.white)
             }
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button {
+                    dismiss()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .foregroundColor(.white)
+                }
+            }
         }
+        .navigationBarBackButtonHidden(true)
     }
 }
-
-
 
 #Preview {
     MyAccountDetailsView(viewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))
