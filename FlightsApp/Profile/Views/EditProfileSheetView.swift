@@ -2,7 +2,6 @@ import SwiftUI
 
 struct EditProfileSheetView: View {
     @ObservedObject var viewModel: LoginScreenViewModel
-    
     @Environment(\.dismiss) var dismiss
 
     var body: some View {
@@ -44,9 +43,9 @@ struct EditProfileSheetView: View {
                     }
 
                     Button {
-                        viewModel.updateUsername()
+                        viewModel.updateUsername(newUsername: viewModel.newUsernameInput)
                     } label: {
-                        if viewModel.isUpdatingUsername { 
+                        if viewModel.isUpdatingUsername {
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                 .frame(maxWidth: .infinity)
@@ -71,6 +70,12 @@ struct EditProfileSheetView: View {
             }
             .navigationTitle("Edit Profile")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(
+                Color(red: 36/255, green: 97/255, blue: 223/255),
+                for: .navigationBar
+            )
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
@@ -85,7 +90,7 @@ struct EditProfileSheetView: View {
                 }
             }
             .onChange(of: viewModel.showEditProfileSheet) { oldValue, newValue in
-                if !newValue { 
+                if !newValue {
                     dismiss()
                 }
             }

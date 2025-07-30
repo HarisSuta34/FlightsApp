@@ -7,18 +7,22 @@ import FirebaseFirestore
 class LoginScreenViewModel: ObservableObject {
     @Published var email: String = "" {
         didSet {
+            // Interna validacija se poziva da se ažurira ispravnost za dugme, ali ne prikazuje greške
+            validateEmailFormatInternal()
+            // Briše opštu poruku o grešci kada se email promijeni, ako nije specifična greška polja
             if errorMessage != nil && emailValidationError == nil && passwordValidationError == nil {
                 errorMessage = nil
             }
-            validateEmailFormatInternal()
         }
     }
     @Published var password: String = "" {
         didSet {
+            // Interna validacija se poziva da se ažurira ispravnost za dugme, ali ne prikazuje greške
+            validatePasswordLengthInternal()
+            // Briše opštu poruku o grešci kada se lozinka promijeni, ako nije specifična greška polja
             if errorMessage != nil && emailValidationError == nil && passwordValidationError == nil {
                 errorMessage = nil
             }
-            validatePasswordLengthInternal()
         }
     }
     @Published var keepSignedIn: Bool = false
@@ -46,7 +50,6 @@ class LoginScreenViewModel: ObservableObject {
     @Published var isUpdatingUsername: Bool = false
 
     @Published var loginProvider: String = "Email/Password"
-
     @Published var creationDate: Date?
     
     @Published var navigateToChangePassword = false
@@ -54,6 +57,10 @@ class LoginScreenViewModel: ObservableObject {
     @Published var alertTitle = ""
     @Published var alertMessage = ""
 
+    @Published var showForgotPasswordSheet: Bool = false
+    @Published var forgotPasswordEmail: String = ""
+    @Published var forgotPasswordMessage: String?
+    @Published var isSendingPasswordReset: Bool = false
     
     internal let dataManager: AuthenticationAndDataManagement
     
@@ -78,12 +85,17 @@ class LoginScreenViewModel: ObservableObject {
     func loadLoginStateIfNeeded() {
         self.isLoggedIn = dataManager.isAuthenticated
         self.email = dataManager.isAuthenticated ? (Auth.auth().currentUser?.email ?? "") : ""
+        
         if isLoggedIn, let uid = dataManager.currentUserID {
             fetchUsername(for: uid)
             if let currentUser = Auth.auth().currentUser {
                 self.loginProvider = currentUser.providerData.first?.providerID == "google.com" ? "Google" : "Email/Password"
                 self.creationDate = currentUser.metadata.creationDate
             }
+        } else {
+            self.username = nil
+            self.loginProvider = "Email/Password"
+            self.creationDate = nil
         }
     }
 
@@ -145,11 +157,11 @@ class LoginScreenViewModel: ObservableObject {
     }
 
     var isRegisterButtonEnabled: Bool {
-        return !email.isEmpty && !password.isEmpty
+        return !email.isEmpty && !password.isEmpty && isValidEmailFormat && isPasswordLongEnough
     }
     
     var isLoginButtonEnabled: Bool {
-        return !email.isEmpty && !password.isEmpty
+        return !email.isEmpty && !password.isEmpty && isValidEmailFormat && isPasswordLongEnough
     }
 
     func login() {
@@ -256,8 +268,6 @@ class LoginScreenViewModel: ObservableObject {
                     self.emailFieldTouched = false
                     self.passwordFieldTouched = false
                     self.username = nil
-                    self.newUsernameInput = ""
-                    self.usernameUpdateErrorMessage = nil
                     self.loginProvider = "Email/Password"
                     self.creationDate = nil
                     print("User logged out from Firebase.")
@@ -328,7 +338,7 @@ class LoginScreenViewModel: ObservableObject {
             }
         }
     }
-    
+
     func fetchUsername(for uid: String) {
         dataManager.getUserData(uid: uid) { [weak self] result in
             DispatchQueue.main.async {
@@ -345,15 +355,15 @@ class LoginScreenViewModel: ObservableObject {
         }
     }
 
-    func updateUsername() {
-        let trimmedUsername = newUsernameInput.trimmingCharacters(in: .whitespacesAndNewlines)
+    func updateUsername(newUsername: String) {
+        let trimmedUsername = newUsername.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedUsername.isEmpty else {
-            usernameUpdateErrorMessage = "Username cannot be empty"
+            usernameUpdateErrorMessage = "Username cannot be empty."
             return
         }
 
         guard isLoggedIn, let uid = dataManager.currentUserID else {
-            usernameUpdateErrorMessage = "Korisnik nije prijavljen."
+            usernameUpdateErrorMessage = "User is not logged in."
             return
         }
 
@@ -370,7 +380,7 @@ class LoginScreenViewModel: ObservableObject {
                     self.showEditProfileSheet = false
                     print("Username updated successfully to: \(trimmedUsername)")
                 case .failure(let error):
-                    self.usernameUpdateErrorMessage = "Greška pri ažuriranju korisničkog imena: \(error.localizedDescription)"
+                    self.usernameUpdateErrorMessage = "Error updating username: \(error.localizedDescription)"
                     print("Failed to update username: \(error.localizedDescription)")
                 }
             }
@@ -402,18 +412,70 @@ class LoginScreenViewModel: ObservableObject {
             onError("No user is currently logged in.")
             return
         }
+        
+        guard newPassword.count >= 6 else {
+            onError("New password must be at least 6 characters long.")
+            return
+        }
+
+        isLoadingAuth = true
 
         user.updatePassword(to: newPassword) { [weak self] error in
             DispatchQueue.main.async {
                 guard let self = self else { return }
+                self.isLoadingAuth = false
                 if let error = error {
                     onError("Failed to update password: \(error.localizedDescription)")
+                    print("Error updating password: \(error.localizedDescription)")
                 } else {
                     onSuccess()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
+                    print("Password updated successfully. User will be logged out.")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                         self.logout()
-                        print("Korisnik automatski odjavljen nakon promjene lozinke.")
+                        print("User automatically logged out after password change.")
                     }
+                }
+            }
+        }
+    }
+
+    func sendPasswordResetEmail() {
+        guard !forgotPasswordEmail.isEmpty else {
+            forgotPasswordMessage = "Please enter your email address."
+            return
+        }
+
+        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPredicate = NSPredicate(format:"SELF MATCHES %@", emailRegex)
+        guard emailPredicate.evaluate(with: forgotPasswordEmail) else {
+            forgotPasswordMessage = "Invalid email format."
+            return
+        }
+
+        forgotPasswordMessage = nil
+        isSendingPasswordReset = true
+
+        Auth.auth().sendPasswordReset(withEmail: forgotPasswordEmail) { [weak self] error in
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.isSendingPasswordReset = false
+                if let error = error {
+                    if let authErrorCode = AuthErrorCode(rawValue: error._code) {
+                        switch authErrorCode {
+                        case .userNotFound:
+                            self.forgotPasswordMessage = "No user found with that email address."
+                        case .tooManyRequests:
+                            self.forgotPasswordMessage = "Too many requests. Please try again later."
+                        default:
+                            self.forgotPasswordMessage = "Error: \(error.localizedDescription)"
+                        }
+                    } else {
+                        self.forgotPasswordMessage = "Error: \(error.localizedDescription)"
+                    }
+                    print("Error sending password reset email: \(error.localizedDescription)")
+                } else {
+                    self.forgotPasswordMessage = "Password reset email sent to \(self.forgotPasswordEmail). Please check your inbox."
+                    print("Password reset email sent successfully to \(self.forgotPasswordEmail)")
                 }
             }
         }

@@ -1,4 +1,6 @@
 import SwiftUI
+import FirebaseAuth
+import GoogleSignIn
 
 struct LoginScreenView: View {
     @ObservedObject var viewModel: LoginScreenViewModel
@@ -10,7 +12,7 @@ struct LoginScreenView: View {
             ZStack {
                 Color(red: 36/255, green: 97/255, blue: 223/255)
                     .ignoresSafeArea(.all)
-                
+
                 LoginSheetView(viewModel: viewModel)
             }
             .onAppear {
@@ -21,7 +23,7 @@ struct LoginScreenView: View {
                     print("User is logged in. Dismissing LoginScreenView.")
                     dismiss()
                 } else {
-                    print("User is unlogged or automatic login failed.")
+                    print("User is logged out or automatic login failed.")
                 }
             }
             .sheet(isPresented: $viewModel.showRegisterScreen) {

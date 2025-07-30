@@ -1,10 +1,17 @@
 import SwiftUI
 import GoogleSignInSwift
 import GoogleSignIn
+import FirebaseAuth
 
 struct LoginSheetView: View {
     @ObservedObject var viewModel: LoginScreenViewModel
     
+    @FocusState private var focusedField: Field?
+    enum Field: Hashable {
+        case email
+        case password
+    }
+
     var body: some View {
         VStack {
             Text("Login")
@@ -26,6 +33,26 @@ struct LoginSheetView: View {
                     .keyboardType(.emailAddress)
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
+                    .focused($focusedField, equals: .email)
+                    .onTapGesture {
+                        viewModel.emailFieldTouched = true
+                    }
+                    .onChange(of: focusedField) { _, newFocus in
+                        if newFocus != .email && viewModel.emailFieldTouched {
+                            viewModel.validateEmailFormat()
+                        }
+                    }
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(viewModel.emailValidationError != nil ? Color.red : Color.clear, lineWidth: 1)
+                    )
+                if let error = viewModel.emailValidationError {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .font(.caption)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 5)
+                }
                 
                 HStack {
                     ZStack {
@@ -49,14 +76,40 @@ struct LoginSheetView: View {
                 .padding()
                 .background(Color.gray.opacity(0.1))
                 .cornerRadius(10)
+                .focused($focusedField, equals: .password)
+                .onTapGesture {
+                    viewModel.passwordFieldTouched = true
+                }
+                .onChange(of: focusedField) { _, newFocus in
+                    if newFocus != .password && viewModel.passwordFieldTouched {
+                        viewModel.validatePasswordLength()
+                    }
+                }
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(viewModel.passwordValidationError != nil ? Color.red : Color.clear, lineWidth: 1)
+                )
+
+                if let error = viewModel.passwordValidationError {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .font(.caption)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.leading, 5)
+                }
                 
                 HStack {
                     Spacer()
-                    Button("Forgot Password?") {
-                        print("Forgot Password tapped")
+                    Button(action: {
+                        viewModel.forgotPasswordEmail = viewModel.email
+                        viewModel.forgotPasswordMessage = nil
+                        viewModel.showForgotPasswordSheet = true
+                    }) {
+                        Text("Forgot Password?")
+                            .font(.footnote)
+                            .foregroundColor(.blue)
+                            .underline()
                     }
-                    .font(.footnote)
-                    .foregroundColor(.blue)
                 }
                 
                 Toggle(isOn: $viewModel.keepSignedIn) {
@@ -65,17 +118,30 @@ struct LoginSheetView: View {
                 .toggleStyle(CheckboxToggleStyle())
                 .foregroundColor(.black)
                 
-                Button {
+                // Login button
+                Button(action: {
+                    viewModel.emailFieldTouched = true
+                    viewModel.passwordFieldTouched = true
                     viewModel.login()
-                } label: {
-                    Text("Login")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .cornerRadius(10)
+                }) {
+                    if viewModel.isLoadingAuth {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .cornerRadius(10)
+                    } else {
+                        Text("Login")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(viewModel.isLoginButtonEnabled ? Color.blue : Color.gray)
+                            .cornerRadius(10)
+                    }
                 }
+                .disabled(!viewModel.isLoginButtonEnabled || viewModel.isLoadingAuth)
                 
                 if let errorMessage = viewModel.errorMessage {
                     Text(errorMessage)
@@ -90,6 +156,7 @@ struct LoginSheetView: View {
                 GoogleSignInButton() {
                     DispatchQueue.main.async {
                         if let presentingVC = getRootViewController() {
+                            viewModel.isLoadingAuth = true // Set loading state before Google sign-in
                             GIDSignIn.sharedInstance.signIn(withPresenting: presentingVC) { result, error in
                                 viewModel.handleGoogleSignInResult(user: result?.user, error: error)
                             }
@@ -102,9 +169,9 @@ struct LoginSheetView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 50)
                 
-                Button {
+                Button(action: {
                     viewModel.showRegisterScreen = true
-                } label: {
+                }) {
                     Text("Create an account")
                         .font(.headline)
                         .foregroundColor(.blue)
@@ -119,8 +186,20 @@ struct LoginSheetView: View {
             
             Spacer()
         }
+        .onTapGesture {
+            focusedField = nil
+        }
+        .onAppear {
+            viewModel.emailFieldTouched = false
+            viewModel.passwordFieldTouched = false
+            viewModel.emailValidationError = nil
+            viewModel.passwordValidationError = nil
+        }
+        .sheet(isPresented: $viewModel.showForgotPasswordSheet) {
+            ForgotPasswordSheetView(viewModel: viewModel)
+        }
     }
- 
+    
     private func getRootViewController() -> UIViewController? {
         guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene else {
             return nil
@@ -150,4 +229,8 @@ struct CheckboxToggleStyle: ToggleStyle {
             configuration.label
         }
     }
+}
+
+#Preview {
+    LoginSheetView(viewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))
 }
