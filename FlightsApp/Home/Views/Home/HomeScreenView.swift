@@ -1,6 +1,12 @@
 import SwiftUI
+import Foundation
+import GoogleSignIn
+import FirebaseAuth
+import FirebaseFirestore
 
 struct HomeScreenView: View {
+    @ObservedObject var viewModel: LoginScreenViewModel
+    
     @State private var selectedTripType: String = "One way"
     @State private var fromLocation: String = "Mostar"
     @State private var fromAirportCode: String = "MST"
@@ -10,14 +16,34 @@ struct HomeScreenView: View {
     @State private var toAirportName: String = "Subhash Chandra International Airport"
     @State private var departureDate: Date = Calendar.current.date(from: DateComponents(year: 2022, month: 7, day: 15)) ?? Date()
     @State private var returnDate: Date? = nil
-    @State private var numberOfTravellers: Int = 1
+    
+    @State private var numberOfAdults: Int = 1
+    @State private var numberOfKids: Int = 0
+    
     @State private var selectedClass: String = "Economy"
+
+    @State private var showingDepartureDatePicker: Bool = false
+    @State private var showingReturnDatePicker: Bool = false
+    @State private var showingTravellerSelectionSheet: Bool = false
+    // NOVO: State varijabla za kontrolu prikaza sheet-a za klasu
+    @State private var showingClassSelectionSheet: Bool = false
 
     private func formattedDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         formatter.timeStyle = .none
         return formatter.string(from: date)
+    }
+    
+    private func travellerText() -> String {
+        var parts: [String] = []
+        if numberOfAdults > 0 {
+            parts.append("\(numberOfAdults) Adult\(numberOfAdults > 1 ? "s" : "")")
+        }
+        if numberOfKids > 0 {
+            parts.append("\(numberOfKids) Kid\(numberOfKids > 1 ? "s" : "")")
+        }
+        return parts.isEmpty ? "0 Travellers" : parts.joined(separator: ", ")
     }
 
     var body: some View {
@@ -31,7 +57,7 @@ struct HomeScreenView: View {
                         .frame(height: 80)
 
                     VStack(alignment: .leading, spacing: 15) {
-                        Text("Welcome back Denis.")
+                        Text("Welcome back \(viewModel.username ?? viewModel.email.components(separatedBy: "@").first ?? "User").")
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(.black)
@@ -112,41 +138,62 @@ struct HomeScreenView: View {
 
                         HStack(spacing: 15) {
                             // Departure Date
-                            FlightInputFieldView(
-                                title: "Departure",
-                                mainText: formattedDate(departureDate),
-                                subText: "15/07/2022",
-                                icon: "calendar"
-                            )
-                            .frame(maxWidth: .infinity)
+                            Button(action: {
+                                showingDepartureDatePicker = true
+                            }) {
+                                FlightInputFieldView(
+                                    title: "Departure",
+                                    mainText: formattedDate(departureDate),
+                                    subText: "Odaberite datum",
+                                    icon: "calendar"
+                                )
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(PlainButtonStyle())
 
-                            FlightInputFieldView(
-                                title: "Return",
-                                mainText: returnDate.map { formattedDate($0) } ?? "+ Add Return Date",
-                                subText: "",
-                                icon: "calendar"
-                            )
-                            .frame(maxWidth: .infinity)
+                            Button(action: {
+                                showingReturnDatePicker = true
+                            }) {
+                                FlightInputFieldView(
+                                    title: "Return",
+                                    mainText: returnDate.map { formattedDate($0) } ?? "+ Dodaj datum povratka",
+                                    subText: "",
+                                    icon: "calendar"
+                                )
+                                .frame(maxWidth: .infinity)
+                                .opacity(selectedTripType == "One way" ? 0.5 : 1.0)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                            .disabled(selectedTripType == "One way")
                         }
                         .offset(y: -50)
 
                         HStack(spacing: 15) {
-                            // Traveller
-                            FlightInputFieldView(
-                                title: "Traveller",
-                                mainText: "\(numberOfTravellers) Adult", // Dummy
-                                subText: "",
-                                icon: "person.fill"
-                            )
-                            .frame(maxWidth: .infinity)
+                            Button(action: {
+                                showingTravellerSelectionSheet = true
+                            }) {
+                                FlightInputFieldView(
+                                    title: "Traveller",
+                                    mainText: travellerText(),
+                                    subText: "",
+                                    icon: "person.fill"
+                                )
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(PlainButtonStyle())
 
-                            FlightInputFieldView(
-                                title: "Class",
-                                mainText: selectedClass, // Dummy
-                                subText: "",
-                                icon: "tag.fill"
-                            )
-                            .frame(maxWidth: .infinity)
+                            Button(action: {
+                                showingClassSelectionSheet = true
+                            }) {
+                                FlightInputFieldView(
+                                    title: "Class",
+                                    mainText: selectedClass,
+                                    subText: "",
+                                    icon: "tag.fill"
+                                )
+                                .frame(maxWidth: .infinity)
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
                         .offset(y: -50)
 
@@ -248,10 +295,71 @@ struct HomeScreenView: View {
             .ignoresSafeArea(.container, edges: .top)
         }
         .navigationBarHidden(true)
+        .sheet(isPresented: $showingDepartureDatePicker) {
+            VStack {
+                HStack {
+                    Button("Cancel") {
+                        showingDepartureDatePicker = false
+                    }
+                    .padding()
+                    Spacer()
+                    Button("Done") {
+                        showingDepartureDatePicker = false
+                    }
+                    .padding()
+                }
+                DatePicker(
+                    "Odaberite datum polaska",
+                    selection: $departureDate,
+                    in: Date()...,
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.graphical)
+                .padding()
+            }
+        }
+        .sheet(isPresented: $showingReturnDatePicker) {
+            VStack {
+                HStack {
+                    Button("Cancel") {
+                        showingReturnDatePicker = false
+                    }
+                    .padding()
+                    Spacer()
+                    Button("Done") {
+                        showingReturnDatePicker = false
+                    }
+                    .padding()
+                }
+                DatePicker(
+                    "Odaberite datum povratka",
+                    selection: Binding(
+                        get: { returnDate ?? departureDate },
+                        set: { returnDate = $0 }
+                    ),
+                    in: departureDate...,
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.graphical)
+                .padding()
+            }
+        }
+        .sheet(isPresented: $showingTravellerSelectionSheet) {
+            TravellerSelectionView(
+                showingSheet: $showingTravellerSelectionSheet,
+                numberOfAdults: $numberOfAdults,
+                numberOfKids: $numberOfKids
+            )
+        }
+        .sheet(isPresented: $showingClassSelectionSheet) {
+            FlightClassSelectionView(
+                showingSheet: $showingClassSelectionSheet,
+                selectedClass: $selectedClass
+            )
+        }
     }
 }
 
-
 #Preview {
-    HomeScreenView()
+    HomeScreenView(viewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))
 }
