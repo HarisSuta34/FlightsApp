@@ -6,7 +6,7 @@ struct MainTabView: View {
     var body: some View {
         TabView {
             NavigationStack {
-                HomeScreenView(viewModel: viewModel)
+                HomeScreenView()
             }
             .tabItem {
                 VStack {
