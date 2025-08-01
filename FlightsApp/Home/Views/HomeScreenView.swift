@@ -144,7 +144,7 @@ struct HomeScreenView: View {
                                 FlightInputFieldView(
                                     title: "Departure",
                                     mainText: formattedDate(departureDate),
-                                    subText: "Odaberite datum",
+                                    subText: "Pick date",
                                     icon: "calendar"
                                 )
                                 .frame(maxWidth: .infinity)
@@ -156,7 +156,7 @@ struct HomeScreenView: View {
                             }) {
                                 FlightInputFieldView(
                                     title: "Return",
-                                    mainText: returnDate.map { formattedDate($0) } ?? "+ Dodaj datum povratka",
+                                    mainText: returnDate.map { formattedDate($0) } ?? "+ Add return date",
                                     subText: "",
                                     icon: "calendar"
                                 )
