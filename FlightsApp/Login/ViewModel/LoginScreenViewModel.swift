@@ -7,9 +7,7 @@ import FirebaseFirestore
 class LoginScreenViewModel: ObservableObject {
     @Published var email: String = "" {
         didSet {
-            // Interna validacija se poziva da se ažurira ispravnost za dugme, ali ne prikazuje greške
             validateEmailFormatInternal()
-            // Briše opštu poruku o grešci kada se email promijeni, ako nije specifična greška polja
             if errorMessage != nil && emailValidationError == nil && passwordValidationError == nil {
                 errorMessage = nil
             }
@@ -17,9 +15,7 @@ class LoginScreenViewModel: ObservableObject {
     }
     @Published var password: String = "" {
         didSet {
-            // Interna validacija se poziva da se ažurira ispravnost za dugme, ali ne prikazuje greške
             validatePasswordLengthInternal()
-            // Briše opštu poruku o grešci kada se lozinka promijeni, ako nije specifična greška polja
             if errorMessage != nil && emailValidationError == nil && passwordValidationError == nil {
                 errorMessage = nil
             }

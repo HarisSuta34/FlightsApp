@@ -4,60 +4,24 @@ import GoogleSignIn
 import FirebaseAuth
 import FirebaseFirestore
 
+
 struct HomeScreenView: View {
-    @ObservedObject var viewModel: LoginScreenViewModel
+    @StateObject private  var homeScreenViewModel = HomeScreenViewModel()
     
-    @State private var selectedTripType: String = "One way"
-    @State private var fromLocation: String = "Mostar"
-    @State private var fromAirportCode: String = "MST"
-    @State private var fromAirportName: String = "Mostar International Airport"
-    @State private var toLocation: String = "New York"
-    @State private var toAirportCode: String = "LGA"
-    @State private var toAirportName: String = "Subhash Chandra International Airport"
-    @State private var departureDate: Date = Calendar.current.date(from: DateComponents(year: 2022, month: 7, day: 15)) ?? Date()
-    @State private var returnDate: Date? = nil
+    @ObservedObject var loginScreenViewModel: LoginScreenViewModel
     
-    @State private var numberOfAdults: Int = 1
-    @State private var numberOfKids: Int = 0
-    
-    @State private var selectedClass: String = "Economy"
-
-    @State private var showingDepartureDatePicker: Bool = false
-    @State private var showingReturnDatePicker: Bool = false
-    @State private var showingTravellerSelectionSheet: Bool = false
-    // NOVO: State varijabla za kontrolu prikaza sheet-a za klasu
-    @State private var showingClassSelectionSheet: Bool = false
-
-    private func formattedDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        formatter.timeStyle = .none
-        return formatter.string(from: date)
-    }
-    
-    private func travellerText() -> String {
-        var parts: [String] = []
-        if numberOfAdults > 0 {
-            parts.append("\(numberOfAdults) Adult\(numberOfAdults > 1 ? "s" : "")")
-        }
-        if numberOfKids > 0 {
-            parts.append("\(numberOfKids) Kid\(numberOfKids > 1 ? "s" : "")")
-        }
-        return parts.isEmpty ? "0 Travellers" : parts.joined(separator: ", ")
-    }
-
     var body: some View {
         ZStack(alignment: .top) {
             Color(red: 36/255, green: 97/255, blue: 223/255)
                 .ignoresSafeArea(.all)
-
+            
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 0) {
                     Spacer()
                         .frame(height: 80)
-
+                    
                     VStack(alignment: .leading, spacing: 15) {
-                        Text("Welcome back \(viewModel.username ?? viewModel.email.components(separatedBy: "@").first ?? "User").")
+                        Text("Welcome back \(loginScreenViewModel.username ?? loginScreenViewModel.email.components(separatedBy: "@").first ?? "User").")
                             .font(.title2)
                             .fontWeight(.bold)
                             .foregroundColor(.black)
@@ -65,56 +29,52 @@ struct HomeScreenView: View {
                             .font(.subheadline)
                             .foregroundColor(.gray)
                             .padding(.bottom, 10)
-
+                        
                         HStack(spacing: 0) {
-                            Button(action: { selectedTripType = "One way" }) {
+                            Button(action: { homeScreenViewModel.selectedTripType = "One way" }) {
                                 Text("One way")
                                     .font(.subheadline)
                                     .fontWeight(.medium)
-                                    .foregroundColor(selectedTripType == "One way" ? .white : .black)
+                                    .foregroundColor(homeScreenViewModel.selectedTripType == "One way" ? .white : .black)
                                     .padding(.vertical, 8)
                                     .padding(.horizontal, 20)
                                     .frame(maxWidth: .infinity)
-                                    .background(selectedTripType == "One way" ? Color.blue : Color.clear)
+                                    .background(homeScreenViewModel.selectedTripType == "One way" ? Color.blue : Color.clear)
                                     .cornerRadius(8)
                             }
-                            Button(action: { selectedTripType = "Round" }) {
+                            Button(action: { homeScreenViewModel.selectedTripType = "Round" }) {
                                 Text("Round")
                                     .font(.subheadline)
                                     .fontWeight(.medium)
-                                    .foregroundColor(selectedTripType == "Round" ? .white : .black)
+                                    .foregroundColor(homeScreenViewModel.selectedTripType == "Round" ? .white : .black)
                                     .padding(.vertical, 8)
                                     .padding(.horizontal, 20)
                                     .frame(maxWidth: .infinity)
-                                    .background(selectedTripType == "Round" ? Color.blue : Color.clear)
+                                    .background(homeScreenViewModel.selectedTripType == "Round" ? Color.blue : Color.clear)
                                     .cornerRadius(8)
                             }
                         }
                         .background(Color.gray.opacity(0.1))
                         .cornerRadius(10)
                         .padding(.bottom, 10)
-
-                        FlightInputFieldView(
-                            title: "From",
-                            mainText: "\(fromLocation) \(fromAirportCode)",
-                            subText: fromAirportName,
-                            icon: "airplane.departure"
-                        )
-
+                        
+                        Button(action: {
+                            homeScreenViewModel.showingFromAirportSelection = true
+                        }) {
+                            FlightInputFieldView(
+                                title: "From",
+                                mainText: homeScreenViewModel.fromAirport.city,
+                                subText: "\(homeScreenViewModel.fromAirport.name) (\(homeScreenViewModel.fromAirport.code))",
+                                icon: "airplane.departure"
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
                         HStack {
                             Spacer()
                             Button(action: {
-                                let tempLocation = fromLocation
-                                let tempCode = fromAirportCode
-                                let tempName = fromAirportName
-
-                                fromLocation = toLocation
-                                fromAirportCode = toAirportCode
-                                fromAirportName = toAirportName
-
-                                toLocation = tempLocation
-                                toAirportCode = tempCode
-                                toAirportName = tempName
+                                // Zamjena aerodroma poziva se iz ViewModela
+                                homeScreenViewModel.swapAirports()
                             }) {
                                 Image(systemName: "arrow.up.arrow.down")
                                     .font(.title2)
@@ -127,67 +87,72 @@ struct HomeScreenView: View {
                             .offset(y: -25)
                             Spacer()
                         }
-
-                        FlightInputFieldView(
-                            title: "To",
-                            mainText: "\(toLocation) \(toAirportCode)",
-                            subText: toAirportName,
-                            icon: "airplane.arrival"
-                        )
+                        
+                        // Dugme za odabir dolaznog aerodroma
+                        Button(action: {
+                            homeScreenViewModel.showingToAirportSelection = true
+                        }) {
+                            FlightInputFieldView(
+                                title: "To",
+                                mainText: homeScreenViewModel.toAirport.city,
+                                subText: "\(homeScreenViewModel.toAirport.name) (\(homeScreenViewModel.toAirport.code))",
+                                icon: "airplane.arrival"
+                            )
+                        }
+                        .buttonStyle(PlainButtonStyle())
                         .offset(y: -50)
-
+                        
                         HStack(spacing: 15) {
-                            // Departure Date
                             Button(action: {
-                                showingDepartureDatePicker = true
+                                homeScreenViewModel.showingDepartureDatePicker = true
                             }) {
                                 FlightInputFieldView(
                                     title: "Departure",
-                                    mainText: formattedDate(departureDate),
+                                    mainText: homeScreenViewModel.formattedDepartureDate,
                                     subText: "Pick date",
                                     icon: "calendar"
                                 )
                                 .frame(maxWidth: .infinity)
                             }
                             .buttonStyle(PlainButtonStyle())
-
+                            
                             Button(action: {
-                                showingReturnDatePicker = true
+                                homeScreenViewModel.showingReturnDatePicker = true
                             }) {
                                 FlightInputFieldView(
                                     title: "Return",
-                                    mainText: returnDate.map { formattedDate($0) } ?? "+ Add return date",
+                                    mainText: homeScreenViewModel.formattedReturnDate,
                                     subText: "",
                                     icon: "calendar"
                                 )
                                 .frame(maxWidth: .infinity)
-                                .opacity(selectedTripType == "One way" ? 0.5 : 1.0)
+                                .opacity(homeScreenViewModel.selectedTripType == "One way" ? 0.5 : 1.0)
                             }
                             .buttonStyle(PlainButtonStyle())
-                            .disabled(selectedTripType == "One way")
+                            .disabled(homeScreenViewModel.selectedTripType == "One way")
                         }
                         .offset(y: -50)
-
+                        
                         HStack(spacing: 15) {
                             Button(action: {
-                                showingTravellerSelectionSheet = true
+                                homeScreenViewModel.showingTravellerSelectionSheet = true
                             }) {
                                 FlightInputFieldView(
                                     title: "Traveller",
-                                    mainText: travellerText(),
+                                    mainText: homeScreenViewModel.travellerText,
                                     subText: "",
                                     icon: "person.fill"
                                 )
                                 .frame(maxWidth: .infinity)
                             }
                             .buttonStyle(PlainButtonStyle())
-
+                            
                             Button(action: {
-                                showingClassSelectionSheet = true
+                                homeScreenViewModel.showingClassSelectionSheet = true
                             }) {
                                 FlightInputFieldView(
                                     title: "Class",
-                                    mainText: selectedClass,
+                                    mainText: homeScreenViewModel.selectedClass,
                                     subText: "",
                                     icon: "tag.fill"
                                 )
@@ -196,7 +161,7 @@ struct HomeScreenView: View {
                             .buttonStyle(PlainButtonStyle())
                         }
                         .offset(y: -50)
-
+                        
                         Button(action: {
                             print("Search button tapped!")
                         }) {
@@ -216,7 +181,7 @@ struct HomeScreenView: View {
                     .cornerRadius(20)
                     .shadow(radius: 5)
                     .padding(.horizontal, 20)
-
+                    
                     VStack(alignment: .leading) {
                         HStack {
                             Text("Personal offers")
@@ -234,7 +199,7 @@ struct HomeScreenView: View {
                         }
                         .padding(.horizontal, 20)
                         .padding(.top, 30)
-
+                        
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 15) {
                                 OfferCardView(
@@ -243,25 +208,25 @@ struct HomeScreenView: View {
                                     icon: Image("mastercard"),
                                     discount: "15% OFF",
                                     brand: "mastercard",
-                                    description: "Lorem ipsum dolor sit amet etet adip"
+                                    description: "Pay with mastercard"
                                 )
-
+                                
                                 OfferCardView(
                                     backgroundColor: Color(red: 230/255, green: 230/255, blue: 255/255),
                                     textColor: .black,
                                     icon: Image("visa1"),
                                     discount: "23% OFF",
                                     brand: "VISA",
-                                    description: "Lorem ipsum dolor sit amet etet adip"
+                                    description: "Pay with Visa"
                                 )
-
+                                
                                 OfferCardView(
                                     backgroundColor: Color(red: 230/255, green: 255/255, blue: 230/255),
                                     textColor: .black,
                                     icon: Image("amex"),
                                     discount: "10% OFF",
                                     brand: "AMEX",
-                                    description: "Lorem ipsum dolor sit amet etet adip"
+                                    description: "Pay with Amex"
                                 )
                             }
                             .padding(.horizontal, 20)
@@ -273,7 +238,7 @@ struct HomeScreenView: View {
             .safeAreaInset(edge: .bottom) {
                 Color.clear.frame(height: 0)
             }
-
+            
             VStack(spacing: 0) {
                 HStack {
                     Image(systemName: "airplane")
@@ -295,22 +260,18 @@ struct HomeScreenView: View {
             .ignoresSafeArea(.container, edges: .top)
         }
         .navigationBarHidden(true)
-        .sheet(isPresented: $showingDepartureDatePicker) {
+        .sheet(isPresented: $homeScreenViewModel.showingDepartureDatePicker) {
             VStack {
                 HStack {
-                    Button("Cancel") {
-                        showingDepartureDatePicker = false
-                    }
+                    Button("Cancel") { homeScreenViewModel.showingDepartureDatePicker = false }
                     .padding()
                     Spacer()
-                    Button("Done") {
-                        showingDepartureDatePicker = false
-                    }
+                    Button("Done") { homeScreenViewModel.showingDepartureDatePicker = false }
                     .padding()
                 }
                 DatePicker(
-                    "Odaberite datum polaska",
-                    selection: $departureDate,
+                    "Choose departure date",
+                    selection: $homeScreenViewModel.departureDate,
                     in: Date()...,
                     displayedComponents: .date
                 )
@@ -318,48 +279,52 @@ struct HomeScreenView: View {
                 .padding()
             }
         }
-        .sheet(isPresented: $showingReturnDatePicker) {
+        .sheet(isPresented: $homeScreenViewModel.showingReturnDatePicker) {
             VStack {
                 HStack {
-                    Button("Cancel") {
-                        showingReturnDatePicker = false
-                    }
+                    Button("Cancel") { homeScreenViewModel.showingReturnDatePicker = false }
                     .padding()
                     Spacer()
-                    Button("Done") {
-                        showingReturnDatePicker = false
-                    }
+                    Button("Done") { homeScreenViewModel.showingReturnDatePicker = false }
                     .padding()
                 }
                 DatePicker(
-                    "Odaberite datum povratka",
+                    "Choose return date",
                     selection: Binding(
-                        get: { returnDate ?? departureDate },
-                        set: { returnDate = $0 }
+                        get: { homeScreenViewModel.returnDate ?? homeScreenViewModel.departureDate },
+                        set: { homeScreenViewModel.returnDate = $0 }
                     ),
-                    in: departureDate...,
+                    in: homeScreenViewModel.departureDate...,
                     displayedComponents: .date
                 )
                 .datePickerStyle(.graphical)
                 .padding()
             }
         }
-        .sheet(isPresented: $showingTravellerSelectionSheet) {
+        .sheet(isPresented: $homeScreenViewModel.showingTravellerSelectionSheet) {
             TravellerSelectionView(
-                showingSheet: $showingTravellerSelectionSheet,
-                numberOfAdults: $numberOfAdults,
-                numberOfKids: $numberOfKids
+                showingSheet: $homeScreenViewModel.showingTravellerSelectionSheet,
+                numberOfAdults: $homeScreenViewModel.numberOfAdults,
+                numberOfKids: $homeScreenViewModel.numberOfKids
             )
         }
-        .sheet(isPresented: $showingClassSelectionSheet) {
+        .sheet(isPresented: $homeScreenViewModel.showingClassSelectionSheet) {
             FlightClassSelectionView(
-                showingSheet: $showingClassSelectionSheet,
-                selectedClass: $selectedClass
+                showingSheet: $homeScreenViewModel.showingClassSelectionSheet,
+                selectedClass: $homeScreenViewModel.selectedClass
             )
+        }
+        .sheet(isPresented: $homeScreenViewModel.showingFromAirportSelection) {
+            AirportSelectionView(selectedAirport: $homeScreenViewModel.fromAirport, airports: sampleAirports)
+        }
+        .sheet(isPresented: $homeScreenViewModel.showingToAirportSelection) {
+            AirportSelectionView(selectedAirport: $homeScreenViewModel.toAirport, airports: sampleAirports)
         }
     }
 }
 
+
+
 #Preview {
-    HomeScreenView(viewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))
+    HomeScreenView(loginScreenViewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))
 }
