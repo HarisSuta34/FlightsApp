@@ -8,7 +8,7 @@ struct FlightsAppApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     @StateObject private var loginViewModel = LoginScreenViewModel(dataManager: LoginDataManager.shared)
-    
+    @StateObject private var homeScreenViewModel = HomeScreenViewModel()
 
     @State private var showSplash = true
 
