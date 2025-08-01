@@ -1,8 +1,14 @@
 import SwiftUI
 
+// Pretpostavimo da već imate definisane LoginScreenViewModel i HomeScreenView
+// kao što ste naveli.
+// struct HomeScreenView: View { ... }
+// struct LoginScreenViewModel: ObservableObject { ... }
+// struct ProfileScreenView: View { ... }
+
 struct MainTabView: View {
     @ObservedObject var viewModel: LoginScreenViewModel
-
+    
     var body: some View {
         TabView {
             NavigationStack {
@@ -12,6 +18,18 @@ struct MainTabView: View {
                 VStack {
                     Image(systemName: "house.fill")
                     Text("Home")
+                }
+                .padding(.vertical, 20)
+            }
+            
+            // Dodana je kartica "Offers"
+            NavigationStack {
+                FlightOffersScreenView()
+            }
+            .tabItem {
+                VStack {
+                    Image(systemName: "airplane")
+                    Text("Offers")
                 }
                 .padding(.vertical, 20)
             }
@@ -25,18 +43,17 @@ struct MainTabView: View {
                     Text("Profile")
                 }
                 .padding(.vertical, 20)
-                
             }
         }
         .accentColor(.blue)
         .onAppear {
-            
             UITabBar.appearance().backgroundColor = UIColor.white
-            UITabBar.appearance().tintColor = UIColor.blue 
+            UITabBar.appearance().tintColor = UIColor.blue
         }
     }
 }
 
+// MARK: - Preview
 #Preview {
     MainTabView(viewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))
 }
