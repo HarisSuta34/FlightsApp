@@ -1,10 +1,3 @@
-//
-//  HomeSheetView.swift
-//  FlightsApp
-//
-//  Created by Haris Suta on 1. 8. 2025..
-//
-
 import SwiftUI
 
 struct HomeSheetView: View {

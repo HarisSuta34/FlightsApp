@@ -105,7 +105,7 @@ class LoginDataManager: AuthenticationAndDataManagement {
         let userRef = db.collection("users").document(uid)
         var dataToSave: [String: Any] = ["email": email, "lastLogin": FieldValue.serverTimestamp()]
         if let username = username {
-            dataToSave["username"] = username // Dodaj username ako postoji
+            dataToSave["username"] = username 
         }
         userRef.setData(dataToSave, merge: true) { error in
             if let error = error {

@@ -118,7 +118,6 @@ struct LoginSheetView: View {
                 .toggleStyle(CheckboxToggleStyle())
                 .foregroundColor(.black)
                 
-                // Login button
                 Button(action: {
                     viewModel.emailFieldTouched = true
                     viewModel.passwordFieldTouched = true

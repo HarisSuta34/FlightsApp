@@ -1,23 +1,13 @@
-//
-//  AirportSelectionView.swift
-//  FlightsApp
-//
-//  Created by Haris Suta on 31. 7. 2025..
-//
-
 import SwiftUI
 
 struct AirportSelectionView: View {
-    @Environment(\.dismiss) var dismiss // Varijabla za zatvaranje sheet-a
-    @Binding var selectedAirport: Airport // Binding za aerodrom koji će biti odabran
+    @Environment(\.dismiss) var dismiss
+    @Binding var selectedAirport: Airport
     
-    // Filterable list of airports
     let airports: [Airport]
     
-    // State varijabla za pretragu
     @State private var searchText: String = ""
     
-    // Filtrirana lista aerodroma na osnovu unosa u pretragu
     var filteredAirports: [Airport] {
         if searchText.isEmpty {
             return airports
@@ -36,7 +26,6 @@ struct AirportSelectionView: View {
                 List {
                     ForEach(filteredAirports) { airport in
                         Button(action: {
-                            // Ažuriraj odabrani aerodrom i zatvori sheet
                             selectedAirport = airport
                             dismiss()
                         }) {
@@ -68,6 +57,5 @@ struct AirportSelectionView: View {
 }
 
 #Preview {
-    // Dummy varijabla za preview
     AirportSelectionView(selectedAirport: .constant(sampleAirports[0]), airports: sampleAirports)
 }
