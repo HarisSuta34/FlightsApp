@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct FlightOffersScreenView: View {
+    @Environment(\.presentationMode) var presentationMode: Binding<PresentationMode>
     @StateObject private var viewModel: FlightOffersViewModel
     @State private var showingFilterSheet = false
     @State private var filterOptions = FilterOptions()
@@ -10,31 +11,53 @@ struct FlightOffersScreenView: View {
     }
     
     var body: some View {
-        NavigationView {
-            ZStack(alignment: .top) {
-                Color(red: 235/255, green: 242/255, blue: 250/255)
-                    .edgesIgnoringSafeArea(.all)
+        ZStack(alignment: .top) {
+            Color(red: 235/255, green: 242/255, blue: 250/255)
+                .edgesIgnoringSafeArea(.all)
+            
+            VStack(spacing: 4) {
+                ZStack {
+                    Color(red: 36/255, green: 97/255, blue: 223/255)
+                        .edgesIgnoringSafeArea(.top)
+                                        
+                    VStack(alignment: .center) {
+                        // Povratna tipka
+                        HStack {
+                            Button(action: {
+                                self.presentationMode.wrappedValue.dismiss()
+                            }) {
+                                HStack {
+                                    Image(systemName: "chevron.left")
+                                        .foregroundColor(.white)
+                                    Text("Back")
+                                        .foregroundColor(.white)
+                                }
+                            }
+                            .padding(.leading, 15)
+                            Spacer()
+                        }
+                        
+                        Spacer()
+                        Text("FLY MOSTAR")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        Image(systemName: "airplane")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 32, height: 32)
+                            .foregroundColor(.white)
+                        
+                        Text("FLIGHT OFFERS")
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.white)
+                        
+                        Spacer()
+                    }
+                }
+                .frame(height: 150)
                 
                 VStack(spacing: 0) {
-                    ZStack(alignment: .bottom) {
-                        Rectangle()
-                            .fill(Color(red: 36/255, green: 97/255, blue: 223/255))
-                            .frame(height: 180)
-                            .edgesIgnoringSafeArea(.top)
-                        
-                        HStack(spacing: 10) {
-                            Image(systemName: "airplane")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 30, height: 30)
-                                .foregroundColor(.white)
-                            Text("FLY MOSTAR")
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.white)
-                        }
-                        .padding(.bottom, 145)
-                    }
-                    
                     VStack(alignment: .leading) {
                         HStack(spacing: 15) {
                             VStack(alignment: .leading) {
@@ -66,7 +89,7 @@ struct FlightOffersScreenView: View {
                     .cornerRadius(12)
                     .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 5)
                     .padding(.horizontal)
-                    .offset(y: -40)
+                    .padding(.top, 20)
                     
                     if viewModel.isLoading {
                         ProgressView()
@@ -95,14 +118,14 @@ struct FlightOffersScreenView: View {
                             .padding(.horizontal)
                             .padding(.bottom, 20)
                         }
-                        .offset(y: -20)
+                        .padding(.top, 20)
                     }
                     
                     Spacer()
                 }
             }
-            .navigationBarHidden(true)
         }
+        .navigationBarHidden(true)
         .sheet(isPresented: $showingFilterSheet) {
             FilterOffersView(filters: $filterOptions)
                 .onDisappear {
@@ -111,7 +134,6 @@ struct FlightOffersScreenView: View {
         }
     }
 }
-
 
 #Preview {
     FlightOffersScreenView(fromCity: "Mostar", toCity: "Sarajevo", adults: 1, kids: 0, flightClass: "Economy")
