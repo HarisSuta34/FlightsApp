@@ -112,7 +112,7 @@ struct FlightOffersScreenView: View {
     }
 }
 
-e
+
 #Preview {
     FlightOffersScreenView(fromCity: "Mostar", toCity: "Sarajevo", adults: 1, kids: 0, flightClass: "Economy")
 }

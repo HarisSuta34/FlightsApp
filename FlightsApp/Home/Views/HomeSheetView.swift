@@ -67,7 +67,7 @@ struct HomeSheetView: View {
                     HStack {
                         Spacer()
                         Button(action: {
-=                            homeScreenViewModel.swapAirports()
+                            homeScreenViewModel.swapAirports()
                         }) {
                             Image(systemName: "arrow.up.arrow.down")
                                 .font(.title2)
@@ -201,4 +201,14 @@ struct HomeSheetView: View {
             Color.clear.frame(height: 0)
         }
     }
+}
+
+#Preview{
+    @State @Previewable var navigateToOffers = false
+    
+    HomeSheetView(
+        homeScreenViewModel: HomeScreenViewModel(),
+        loginScreenViewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared),
+        navigateToOffers: $navigateToOffers
+    )
 }

@@ -1,5 +1,5 @@
 import Foundation
 
 struct FilterOptions {
-    var maxPrice: Double = 500
+    var maxPrice: Double = 10000
 }

@@ -16,6 +16,8 @@ class FlightOffersViewModel: ObservableObject {
     private var kids: Int
     private var flightClass: String
     
+    private var initialFlightOffers: [FlightOffer] = []
+    
     private let baseOffers: [FlightOffer] = [
         FlightOffer(departureCity: "", arrivalCity: "", airline: "Qatar Airways", price: 235),
         FlightOffer(departureCity: "", arrivalCity: "", airline: "Ryanair", price: 127),
@@ -44,7 +46,7 @@ class FlightOffersViewModel: ObservableObject {
             return 2.0
         case "First Class":
             return 2.5
-        default: // Economy
+        default:
             return 1.0
         }
     }
@@ -59,7 +61,7 @@ class FlightOffersViewModel: ObservableObject {
     func fetchOffers() {
         isLoading = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            let allOffers = self.baseOffers.map { baseOffer in
+            let allOffersWithCalculatedPrice = self.baseOffers.map { baseOffer in
                 let newPrice = self.calculatePrice(basePrice: baseOffer.price)
                 return FlightOffer(
                     departureCity: self.fromCity,
@@ -69,8 +71,12 @@ class FlightOffersViewModel: ObservableObject {
                 )
             }
             
-            let randomOfferCount = Int.random(in: 0...allOffers.count)
-            self.flightOffers = Array(allOffers.shuffled().prefix(randomOfferCount))
+            let randomOfferCount = Int.random(in: 0...allOffersWithCalculatedPrice.count)
+            let selectedOffers = Array(allOffersWithCalculatedPrice.shuffled().prefix(randomOfferCount))
+            
+            self.initialFlightOffers = selectedOffers
+            
+            self.flightOffers = self.initialFlightOffers
             
             self.isLoading = false
         }
@@ -79,17 +85,10 @@ class FlightOffersViewModel: ObservableObject {
     func applyFilters(filters: FilterOptions) {
         isLoading = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            let allOffers = self.baseOffers.map { baseOffer -> FlightOffer in
-                let newPrice = self.calculatePrice(basePrice: baseOffer.price)
-                return FlightOffer(
-                    departureCity: self.fromCity,
-                    arrivalCity: self.toCity,
-                    airline: baseOffer.airline,
-                    price: newPrice
-                )
+            self.flightOffers = self.initialFlightOffers.filter { offer in
+                return offer.price <= filters.maxPrice
             }
             
-            self.flightOffers = allOffers.filter { $0.price <= filters.maxPrice }
             self.isLoading = false
         }
     }

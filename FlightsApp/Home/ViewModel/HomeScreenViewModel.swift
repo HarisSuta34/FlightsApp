@@ -8,7 +8,7 @@ class HomeScreenViewModel: ObservableObject {
     @Published var fromAirport: Airport = sampleAirports[0]
     @Published var toAirport: Airport = sampleAirports[1]
     
-    @Published var departureDate: Date = Calendar.current.date(from: DateComponents(year: 2022, month: 7, day: 15)) ?? Date()
+    @Published var departureDate: Date = Date()
     @Published var returnDate: Date? = nil
     
     @Published var numberOfAdults: Int = 1

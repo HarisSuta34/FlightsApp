@@ -19,7 +19,7 @@ struct FilterOffersView: View {
                     Text("Max Price: $\(String(format: "%.0f", localMaxPrice))")
                         .font(.headline)
                     
-                    Slider(value: $localMaxPrice, in: 100...500, step: 10)
+                    Slider(value: $localMaxPrice, in: 100...10000, step: 50)
                         .tint(.blue)
                 }
                 .padding()
