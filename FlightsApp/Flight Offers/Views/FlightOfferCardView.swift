@@ -1,7 +1,3 @@
-//
-//  FlightOfferCardView.swift
-//
-
 import SwiftUI
 
 // MARK: - A view that displays a single flight offer card
@@ -48,7 +44,6 @@ struct FlightOfferCardView: View {
                                 .frame(width: 18, height: 18)
                                 .foregroundColor(.white)
                         }
-                        .rotationEffect(.degrees(90))
                         
                         Line()
                             .stroke(style: StrokeStyle(lineWidth: 1, dash: [5]))
@@ -78,11 +73,6 @@ struct FlightOfferCardView: View {
             Divider()
             
             HStack {
-                Image("qatarairways")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 30, height: 30)
-                
                 Text(offer.airline)
                     .font(.subheadline)
                     .foregroundColor(.gray)

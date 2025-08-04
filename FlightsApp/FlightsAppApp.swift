@@ -18,7 +18,7 @@ struct FlightsAppApp: App {
                 if showSplash {
                     SplashScreenView(showSplash: $showSplash)
                 } else if loginViewModel.isLoggedIn {
-                    MainTabView(viewModel: loginViewModel)
+                    MainTabView()
                 } else {
                     LoginScreenView(viewModel: loginViewModel)
                 }

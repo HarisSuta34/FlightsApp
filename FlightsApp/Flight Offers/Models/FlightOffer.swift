@@ -1,7 +1,3 @@
-//
-//  FlightOffer.swift
-//
-
 import Foundation
 
 // MARK: - A simple model for a flight offer

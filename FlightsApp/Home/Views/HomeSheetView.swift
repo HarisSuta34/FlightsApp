@@ -6,6 +6,8 @@ struct HomeSheetView: View {
     
     @ObservedObject var loginScreenViewModel: LoginScreenViewModel
     
+    @Binding var navigateToOffers: Bool
+    
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 0) {
@@ -65,8 +67,7 @@ struct HomeSheetView: View {
                     HStack {
                         Spacer()
                         Button(action: {
-                            // Zamjena aerodroma poziva se iz ViewModela
-                            homeScreenViewModel.swapAirports()
+=                            homeScreenViewModel.swapAirports()
                         }) {
                             Image(systemName: "arrow.up.arrow.down")
                                 .font(.title2)
@@ -80,7 +81,6 @@ struct HomeSheetView: View {
                         Spacer()
                     }
                     
-                    // Dugme za odabir dolaznog aerodroma
                     Button(action: {
                         homeScreenViewModel.showingToAirportSelection = true
                     }) {
@@ -155,7 +155,7 @@ struct HomeSheetView: View {
                     .offset(y: -50)
                     
                     Button(action: {
-                        print("Search button tapped!")
+                        self.navigateToOffers = true
                     }) {
                         Text("Search")
                             .font(.headline)
@@ -202,13 +202,3 @@ struct HomeSheetView: View {
         }
     }
 }
-
-#Preview {
-    HomeScreenView(
-        homeScreenViewModel: HomeScreenViewModel(),
-        loginScreenViewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared)
-        
-    )
-}
-
-

@@ -1,14 +1,13 @@
-//
-//  FlightOffersScreenView.swift
-//
-
 import SwiftUI
 
-// MARK: - Main view for the Flight Offers screen
 struct FlightOffersScreenView: View {
-    @StateObject private var viewModel = FlightOffersViewModel()
+    @StateObject private var viewModel: FlightOffersViewModel
     @State private var showingFilterSheet = false
-    @State private var filterOptions = FilterOptions() // State to hold current filters
+    @State private var filterOptions = FilterOptions()
+    
+    init(fromCity: String, toCity: String, adults: Int, kids: Int, flightClass: String) {
+        _viewModel = StateObject(wrappedValue: FlightOffersViewModel(fromCity: fromCity, toCity: toCity, adults: adults, kids: kids, flightClass: flightClass))
+    }
     
     var body: some View {
         NavigationView {
@@ -19,11 +18,11 @@ struct FlightOffersScreenView: View {
                 VStack(spacing: 0) {
                     ZStack(alignment: .bottom) {
                         Rectangle()
-                            .fill(Color(red: 26/255, green: 115/255, blue: 232/255))
+                            .fill(Color(red: 36/255, green: 97/255, blue: 223/255))
                             .frame(height: 180)
                             .edgesIgnoringSafeArea(.top)
                         
-                        HStack(spacing: 5) {
+                        HStack(spacing: 10) {
                             Image(systemName: "airplane")
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
@@ -32,12 +31,10 @@ struct FlightOffersScreenView: View {
                             Text("FLY MOSTAR")
                                 .font(.system(size: 24, weight: .bold))
                                 .foregroundColor(.white)
-                            
                         }
-                        .padding(.bottom, 110)
+                        .padding(.bottom, 145)
                     }
                     
-                    // Search preferences card
                     VStack(alignment: .leading) {
                         HStack(spacing: 15) {
                             VStack(alignment: .leading) {
@@ -71,17 +68,23 @@ struct FlightOffersScreenView: View {
                     .padding(.horizontal)
                     .offset(y: -40)
                     
-                    // Display flight offers
                     if viewModel.isLoading {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle())
                             .scaleEffect(1.5)
                             .padding(.top, 50)
                     } else if viewModel.flightOffers.isEmpty {
-                        Text("No flight offers found.")
-                            .font(.title2)
-                            .foregroundColor(.gray)
-                            .padding(.top, 50)
+                        VStack {
+                            Image(systemName: "x.circle.fill")
+                                .resizable()
+                                .frame(width: 80, height: 80)
+                                .foregroundColor(.red)
+                            Text("No flight offers found.")
+                                .font(.title2)
+                                .foregroundColor(.gray)
+                                .padding(.top, 10)
+                        }
+                        .padding(.top, 50)
                     } else {
                         ScrollView {
                             VStack(spacing: 20) {
@@ -99,18 +102,17 @@ struct FlightOffersScreenView: View {
                 }
             }
             .navigationBarHidden(true)
-            .sheet(isPresented: $showingFilterSheet) {
-                // Present the new filter view
-                FilterOffersView(filters: $filterOptions)
-                    .onDisappear {
-                        // Apply filters when the sheet is dismissed
-                        viewModel.applyFilters(filters: filterOptions)
-                    }
-            }
+        }
+        .sheet(isPresented: $showingFilterSheet) {
+            FilterOffersView(filters: $filterOptions)
+                .onDisappear {
+                    viewModel.applyFilters(filters: filterOptions)
+                }
         }
     }
 }
 
+e
 #Preview {
-    FlightOffersScreenView()
+    FlightOffersScreenView(fromCity: "Mostar", toCity: "Sarajevo", adults: 1, kids: 0, flightClass: "Economy")
 }

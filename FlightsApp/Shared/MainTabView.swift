@@ -1,59 +1,76 @@
-import SwiftUI
+//
+//  MainTabView.swift
+//
 
-// Pretpostavimo da već imate definisane LoginScreenViewModel i HomeScreenView
-// kao što ste naveli.
-// struct HomeScreenView: View { ... }
-// struct LoginScreenViewModel: ObservableObject { ... }
-// struct ProfileScreenView: View { ... }
+import SwiftUI
+import GoogleSignIn
+
+// Pretpostavimo da su LoginScreenViewModel, HomeScreenView,
+// PlaceholderOffersView i ProfileScreenView već definisani.
 
 struct MainTabView: View {
-    @ObservedObject var viewModel: LoginScreenViewModel
-    
-    var body: some View {
-        TabView {
-            NavigationStack {
-                HomeScreenView(homeScreenViewModel: HomeScreenViewModel(), loginScreenViewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))
-            }
-            .tabItem {
-                VStack {
-                    Image(systemName: "house.fill")
-                    Text("Home")
-                }
-                .padding(.vertical, 20)
-            }
-            
-            // Dodana je kartica "Offers"
-            NavigationStack {
-                FlightOffersScreenView()
-            }
-            .tabItem {
-                VStack {
-                    Image(systemName: "airplane")
-                    Text("Offers")
-                }
-                .padding(.vertical, 20)
-            }
+    @StateObject private var loginScreenViewModel = LoginScreenViewModel()
+    @StateObject private var homeScreenViewModel = HomeScreenViewModel()
 
-            NavigationStack {
-                ProfileScreenView(viewModel: viewModel)
-            }
-            .tabItem {
-                VStack {
-                    Image(systemName: "person.fill")
-                    Text("Profile")
+    var body: some View {
+        // Koristimo 'isLoggedIn' property iz vašeg ViewModela
+        if loginScreenViewModel.isLoggedIn {
+            TabView {
+                // Home Tab
+                NavigationStack {
+                    HomeScreenView(
+                        homeScreenViewModel: homeScreenViewModel,
+                        loginScreenViewModel: loginScreenViewModel
+                    )
                 }
-                .padding(.vertical, 20)
+                .tabItem {
+                    VStack {
+                        Image(systemName: "house.fill")
+                        Text("Home")
+                    }
+                    .padding(.vertical, 20)
+                }
+                
+                // Offers Tab (placeholder)
+                NavigationStack {
+                    PlaceholderOffersView()
+                }
+                .tabItem {
+                    VStack {
+                        Image(systemName: "airplane")
+                        Text("Offers")
+                    }
+                    .padding(.vertical, 20)
+                }
+                
+                // Profile Tab
+                NavigationStack {
+                    ProfileScreenView(viewModel: loginScreenViewModel)
+                }
+                .tabItem {
+                    VStack {
+                        Image(systemName: "person.fill")
+                        Text("Profile")
+                    }
+                    .padding(.vertical, 20)
+                }
             }
-        }
-        .accentColor(.blue)
-        .onAppear {
-            UITabBar.appearance().backgroundColor = UIColor.white
-            UITabBar.appearance().tintColor = UIColor.blue
+            .tint(.blue)
+            .onAppear {
+                UITabBar.appearance().backgroundColor = UIColor.white
+                UITabBar.appearance().tintColor = UIColor.blue
+            }
+        } else {
+            LoginScreenView(viewModel: loginScreenViewModel)
+                .onAppear {
+                    // Pozivamo ispravnu metodu iz vašeg ViewModela
+                    loginScreenViewModel.loadLoginStateIfNeeded()
+                }
         }
     }
 }
 
 // MARK: - Preview
 #Preview {
-    MainTabView(viewModel: LoginScreenViewModel(dataManager: LoginDataManager.shared))
+    MainTabView()
 }

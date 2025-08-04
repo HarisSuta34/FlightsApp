@@ -1,10 +1,5 @@
-//
-//  Line.swift
-//
-
 import SwiftUI
 
-// MARK: - A helper shape for a dashed line
 struct Line: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()

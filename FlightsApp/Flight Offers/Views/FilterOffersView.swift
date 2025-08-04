@@ -1,17 +1,10 @@
-//
-//  FilterOffersView.swift
-//
-
 import SwiftUI
 
-// MARK: - A new view for filtering flight offers
 struct FilterOffersView: View {
-    @Environment(\.dismiss) var dismiss // Used to close the sheet
+    @Environment(\.dismiss) var dismiss
     
-    // Binding to the filter data, so we can modify it from here
     @Binding var filters: FilterOptions
     
-    // A temporary state to hold the filter changes until the user applies them
     @State private var localMaxPrice: Double
     
     init(filters: Binding<FilterOptions>) {
@@ -22,7 +15,6 @@ struct FilterOffersView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
-                // Price range slider filter
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Max Price: $\(String(format: "%.0f", localMaxPrice))")
                         .font(.headline)
@@ -36,7 +28,6 @@ struct FilterOffersView: View {
                 
                 Spacer()
                 
-                // Apply Filter button
                 Button(action: {
                     filters.maxPrice = localMaxPrice
                     dismiss()
