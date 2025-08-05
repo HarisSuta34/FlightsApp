@@ -15,12 +15,14 @@ struct ForgotPasswordSheetView: View {
                         .font(.title2)
                         .fontWeight(.bold)
                         .padding(.bottom, 10)
+                        .foregroundColor(.blue)
 
                     Text("Enter your email address to receive a password reset link.")
                         .font(.subheadline)
                         .multilineTextAlignment(.center)
-                        .foregroundColor(.gray)
                         .padding(.horizontal)
+                        .foregroundColor(.blue)
+                        .opacity(0.75)
 
                     TextField("Email Address", text: $viewModel.forgotPasswordEmail)
                         .padding()
@@ -30,6 +32,7 @@ struct ForgotPasswordSheetView: View {
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
                         .padding(.horizontal)
+                        .foregroundColor(.blue)
 
                     if let message = viewModel.forgotPasswordMessage {
                         Text(message)

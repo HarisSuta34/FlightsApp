@@ -19,9 +19,8 @@ struct FlightOffersScreenView: View {
                 ZStack {
                     Color(red: 36/255, green: 97/255, blue: 223/255)
                         .edgesIgnoringSafeArea(.top)
-                                        
+                                                
                     VStack(alignment: .center) {
-                        // Povratna tipka
                         HStack {
                             Button(action: {
                                 self.presentationMode.wrappedValue.dismiss()
@@ -112,7 +111,10 @@ struct FlightOffersScreenView: View {
                         ScrollView {
                             VStack(spacing: 20) {
                                 ForEach(viewModel.flightOffers) { offer in
-                                    FlightOfferCardView(offer: offer)
+                                    NavigationLink(destination: FlightSelectionScreenView(selectedOffer: offer)) {
+                                        FlightOfferCardView(offer: offer)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
                                 }
                             }
                             .padding(.horizontal)

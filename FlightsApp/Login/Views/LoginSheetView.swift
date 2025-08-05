@@ -155,7 +155,7 @@ struct LoginSheetView: View {
                 GoogleSignInButton() {
                     DispatchQueue.main.async {
                         if let presentingVC = getRootViewController() {
-                            viewModel.isLoadingAuth = true // Set loading state before Google sign-in
+                            viewModel.isLoadingAuth = true 
                             GIDSignIn.sharedInstance.signIn(withPresenting: presentingVC) { result, error in
                                 viewModel.handleGoogleSignInResult(user: result?.user, error: error)
                             }

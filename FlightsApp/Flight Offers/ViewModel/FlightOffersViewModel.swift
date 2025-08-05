@@ -1,11 +1,6 @@
-//
-//  FlightOffersViewModel.swift
-//
-
 import Foundation
 import SwiftUI
 
-// MARK: - ViewModel to handle data fetching, calculation, and filtering
 class FlightOffersViewModel: ObservableObject {
     @Published var flightOffers: [FlightOffer] = []
     @Published var isLoading = false

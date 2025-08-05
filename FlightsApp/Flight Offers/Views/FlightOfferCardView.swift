@@ -1,6 +1,5 @@
 import SwiftUI
 
-// MARK: - A view that displays a single flight offer card
 struct FlightOfferCardView: View {
     let offer: FlightOffer
     

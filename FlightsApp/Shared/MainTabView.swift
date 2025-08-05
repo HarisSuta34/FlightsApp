@@ -1,22 +1,13 @@
-//
-//  MainTabView.swift
-//
-
 import SwiftUI
 import GoogleSignIn
-
-// Pretpostavimo da su LoginScreenViewModel, HomeScreenView,
-// PlaceholderOffersView i ProfileScreenView već definisani.
 
 struct MainTabView: View {
     @StateObject private var loginScreenViewModel = LoginScreenViewModel()
     @StateObject private var homeScreenViewModel = HomeScreenViewModel()
 
     var body: some View {
-        // Koristimo 'isLoggedIn' property iz vašeg ViewModela
         if loginScreenViewModel.isLoggedIn {
             TabView {
-                // Home Tab
                 NavigationStack {
                     HomeScreenView(
                         homeScreenViewModel: homeScreenViewModel,
@@ -31,7 +22,6 @@ struct MainTabView: View {
                     .padding(.vertical, 20)
                 }
                 
-                // Offers Tab (placeholder)
                 NavigationStack {
                     PlaceholderOffersView()
                 }
@@ -43,7 +33,6 @@ struct MainTabView: View {
                     .padding(.vertical, 20)
                 }
                 
-                // Profile Tab
                 NavigationStack {
                     ProfileScreenView(viewModel: loginScreenViewModel)
                 }
@@ -63,14 +52,12 @@ struct MainTabView: View {
         } else {
             LoginScreenView(viewModel: loginScreenViewModel)
                 .onAppear {
-                    // Pozivamo ispravnu metodu iz vašeg ViewModela
                     loginScreenViewModel.loadLoginStateIfNeeded()
                 }
         }
     }
 }
 
-// MARK: - Preview
 #Preview {
     MainTabView()
 }
