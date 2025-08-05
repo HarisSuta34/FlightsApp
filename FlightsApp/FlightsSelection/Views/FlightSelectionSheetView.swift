@@ -9,18 +9,12 @@ enum CompletionStatus: String {
     }
 }
 
-
-
-
-
-
-
-
-
 struct FlightSelectionSheetView: View {
     let selectedFlightDetails: FlightDetails
     
     @State private var passengerDetailsStatus: CompletionStatus = .incomplete
+    @State private var passengerDetails = PassengerDetails()
+    
     @State private var checkinStatus: CompletionStatus = .incomplete
     @State private var seatStatus: CompletionStatus = .incomplete
     @State private var upgradeStatus: CompletionStatus = .incomplete
@@ -38,7 +32,9 @@ struct FlightSelectionSheetView: View {
                         .padding(.horizontal, 20)
                     
                     VStack(spacing: 15) {
-                        NavigationLink(destination: PassengerDetailsView(status: $passengerDetailsStatus)) {
+                        NavigationLink(destination: PassengerDetailsView(
+                            status: $passengerDetailsStatus,
+                            details: $passengerDetails)) {
                             SelectionOptionCardView(
                                 title: "Passenger Details",
                                 subtitle: passengerDetailsStatus == .completed ? "Completed" : "Update your passenger details",

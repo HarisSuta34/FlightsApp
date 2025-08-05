@@ -19,17 +19,9 @@ struct SelectionOptionCardView: View {
                     .font(.headline)
                     .fontWeight(.bold)
                 
-                HStack {
-                    Text(subtitle)
-                        .font(.subheadline)
-                        .foregroundColor(status == .incomplete ? .red : .green)
-                    
-                    if status == .completed {
-                        Text("COMPLETED")
-                            .font(.subheadline)
-                            .foregroundColor(.green)
-                    }
-                }
+                Text(status == .completed ? "COMPLETED" : subtitle)
+                    .font(.subheadline)
+                    .foregroundColor(status == .completed ? .green : .red)
             }
             
             Spacer()
