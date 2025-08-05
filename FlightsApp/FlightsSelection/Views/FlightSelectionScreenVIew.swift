@@ -2,12 +2,7 @@ import SwiftUI
 
 struct FlightSelectionScreenView: View {
     
-    @State private var passengerDetailsStatus: CompletionStatus = .incomplete
-    @State private var checkinStatus: CompletionStatus = .incomplete
-    @State private var seatStatus: CompletionStatus = .incomplete
-    
     let selectedFlightOffer: FlightOffer
-    
     var selectedFlightDetails: FlightDetails
     
     init(selectedOffer: FlightOffer) {
@@ -26,12 +21,7 @@ struct FlightSelectionScreenView: View {
                         .padding(.top, 35)
                         .padding(.bottom, 20)
                     
-                    FlightSelectionSheetView(
-                        selectedFlightDetails: selectedFlightDetails,
-                        passengerDetailsStatus: $passengerDetailsStatus,
-                        checkinStatus: $checkinStatus,
-                        seatStatus: $seatStatus
-                    )
+                    FlightSelectionSheetView(selectedFlightDetails: selectedFlightDetails)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -54,11 +44,6 @@ struct FlightSelectionScreenView: View {
     }
 }
 
-enum CompletionStatus {
-    case incomplete
-    case completed
-}
-
 #Preview {
     let sampleOffer = FlightOffer(
         departureCity: "Mostar",
@@ -68,8 +53,3 @@ enum CompletionStatus {
     )
     return FlightSelectionScreenView(selectedOffer: sampleOffer)
 }
-
-
-
-
-

@@ -1,11 +1,34 @@
 import SwiftUI
 
+enum CompletionStatus: String {
+    case incomplete
+    case completed
+    
+    var color: Color {
+        self == .completed ? .green : .red
+    }
+}
+
+
+
+
+
+
+
+
+
 struct FlightSelectionSheetView: View {
     let selectedFlightDetails: FlightDetails
     
-    @Binding var passengerDetailsStatus: CompletionStatus
-    @Binding var checkinStatus: CompletionStatus
-    @Binding var seatStatus: CompletionStatus
+    @State private var passengerDetailsStatus: CompletionStatus = .incomplete
+    @State private var checkinStatus: CompletionStatus = .incomplete
+    @State private var seatStatus: CompletionStatus = .incomplete
+    @State private var upgradeStatus: CompletionStatus = .incomplete
+    @State private var baggageStatus: CompletionStatus = .incomplete
+    @State private var additionalBaggageStatus: CompletionStatus = .incomplete
+    
+    @State private var showingAlert = false
+    @State private var alertMessage = ""
     
     var body: some View {
         VStack(spacing: 0) {
@@ -15,47 +38,59 @@ struct FlightSelectionSheetView: View {
                         .padding(.horizontal, 20)
                     
                     VStack(spacing: 15) {
-                        SelectionOptionCardView(
-                            title: "Passenger Details",
-                            subtitle: "Update your passenger details",
-                            iconName: "person.fill",
-                            status: passengerDetailsStatus
-                        )
+                        NavigationLink(destination: PassengerDetailsView(status: $passengerDetailsStatus)) {
+                            SelectionOptionCardView(
+                                title: "Passenger Details",
+                                subtitle: passengerDetailsStatus == .completed ? "Completed" : "Update your passenger details",
+                                iconName: "person.fill",
+                                status: passengerDetailsStatus
+                            )
+                        }
                         
-                        SelectionOptionCardView(
-                            title: "Check-in",
-                            subtitle: "You can checkin now",
-                            iconName: "checkmark.circle.fill",
-                            status: checkinStatus
-                        )
+                        NavigationLink(destination: CheckinView(status: $checkinStatus)) {
+                            SelectionOptionCardView(
+                                title: "Check-in",
+                                subtitle: checkinStatus == .completed ? "Completed" : "You can checkin now",
+                                iconName: "checkmark.circle.fill",
+                                status: checkinStatus
+                            )
+                        }
                         
-                        SelectionOptionCardView(
-                            title: "Upgrade Flight",
-                            subtitle: "Upgrade your flight class",
-                            iconName: "airplane.circle.fill",
-                            status: .incomplete
-                        )
+                        NavigationLink(destination: DummyOptionView(status: $upgradeStatus, title: "Upgrade Flight")) {
+                            SelectionOptionCardView(
+                                title: "Upgrade Flight",
+                                subtitle: upgradeStatus == .completed ? "Completed" : "Upgrade your flight class",
+                                iconName: "airplane.circle.fill",
+                                status: upgradeStatus
+                            )
+                        }
                         
-                        SelectionOptionCardView(
-                            title: "Choose seat",
-                            subtitle: "incomplete",
-                            iconName: "chair.fill",
-                            status: seatStatus
-                        )
+                        NavigationLink(destination: SeatSelectionView(status: $seatStatus)) {
+                            SelectionOptionCardView(
+                                title: "Choose seat",
+                                subtitle: seatStatus == .completed ? "Completed" : "Select your seat",
+                                iconName: "chair.fill",
+                                status: seatStatus
+                            )
+                        }
                         
-                        SelectionOptionCardView(
-                            title: "Baggage allowance",
-                            subtitle: "40kg checked baggage",
-                            iconName: "suitcase.fill",
-                            status: .completed
-                        )
+                        NavigationLink(destination: DummyOptionView(status: $baggageStatus, title: "Baggage allowance")) {
+                            SelectionOptionCardView(
+                                title: "Baggage allowance",
+                                subtitle: baggageStatus == .completed ? "Completed" : "40kg checked baggage",
+                                iconName: "suitcase.fill",
+                                status: baggageStatus
+                            )
+                        }
                         
-                        SelectionOptionCardView(
-                            title: "Purchase additional baggage",
-                            subtitle: "Upgrade your baggage",
-                            iconName: "plus.circle.fill",
-                            status: .incomplete
-                        )
+                        NavigationLink(destination: DummyOptionView(status: $additionalBaggageStatus, title: "Purchase additional baggage")) {
+                            SelectionOptionCardView(
+                                title: "Purchase additional baggage",
+                                subtitle: additionalBaggageStatus == .completed ? "Completed" : "Upgrade your baggage",
+                                iconName: "plus.circle.fill",
+                                status: additionalBaggageStatus
+                            )
+                        }
                     }
                     .padding(.horizontal, 20)
                 }
@@ -66,6 +101,15 @@ struct FlightSelectionSheetView: View {
             .cornerRadius(20, corners: [.topLeft, .topRight])
             
             Button(action: {
+                if passengerDetailsStatus == .incomplete {
+                    alertMessage = "Passenger details must be completed before booking."
+                    showingAlert = true
+                } else if seatStatus == .incomplete {
+                    alertMessage = "You must select a seat before booking."
+                    showingAlert = true
+                } else {
+                    print("Sve je OK, nastavljamo s bookingom!")
+                }
             }) {
                 Text("Book Flight")
                     .font(.headline)
@@ -77,6 +121,13 @@ struct FlightSelectionSheetView: View {
             }
             .padding(20)
             .background(Color.white)
+        }
+        .alert(isPresented: $showingAlert) {
+            Alert(
+                title: Text("Missing Information"),
+                message: Text(alertMessage),
+                dismissButton: .default(Text("OK"))
+            )
         }
     }
 }
@@ -96,13 +147,10 @@ extension View {
     )
     let sampleFlightDetails = FlightDetails(flightOffer: sampleOffer)
     
-    return FlightSelectionSheetView(
-        selectedFlightDetails: sampleFlightDetails,
-        passengerDetailsStatus: .constant(.incomplete),
-        checkinStatus: .constant(.incomplete),
-        seatStatus: .constant(.incomplete)
-    )
-    .background(Color(red: 36/255, green: 97/255, blue: 223/255))
+    return NavigationView {
+        FlightSelectionSheetView(selectedFlightDetails: sampleFlightDetails)
+            .background(Color(red: 36/255, green: 97/255, blue: 223/255))
+    }
 }
 
 
