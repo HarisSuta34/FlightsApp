@@ -6,8 +6,11 @@ struct FlightOffersScreenView: View {
     @State private var showingFilterSheet = false
     @State private var filterOptions = FilterOptions()
     
+    let numberOfTravelers: Int
+    
     init(fromCity: String, toCity: String, adults: Int, kids: Int, flightClass: String) {
         _viewModel = StateObject(wrappedValue: FlightOffersViewModel(fromCity: fromCity, toCity: toCity, adults: adults, kids: kids, flightClass: flightClass))
+        self.numberOfTravelers = adults + kids
     }
     
     var body: some View {
@@ -19,7 +22,7 @@ struct FlightOffersScreenView: View {
                 ZStack {
                     Color(red: 36/255, green: 97/255, blue: 223/255)
                         .edgesIgnoringSafeArea(.top)
-                                                
+                    
                     VStack(alignment: .center) {
                         HStack {
                             Button(action: {
@@ -111,7 +114,7 @@ struct FlightOffersScreenView: View {
                         ScrollView {
                             VStack(spacing: 20) {
                                 ForEach(viewModel.flightOffers) { offer in
-                                    NavigationLink(destination: FlightSelectionScreenView(selectedOffer: offer)) {
+                                    NavigationLink(destination: FlightSelectionScreenView(selectedOffer: offer, numberOfTravelers: numberOfTravelers)) {
                                         FlightOfferCardView(offer: offer)
                                     }
                                     .buttonStyle(PlainButtonStyle())

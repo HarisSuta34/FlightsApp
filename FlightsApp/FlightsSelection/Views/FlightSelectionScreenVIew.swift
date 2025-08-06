@@ -5,9 +5,12 @@ struct FlightSelectionScreenView: View {
     let selectedFlightOffer: FlightOffer
     var selectedFlightDetails: FlightDetails
     
-    init(selectedOffer: FlightOffer) {
+    let numberOfTravelers: Int
+    
+    init(selectedOffer: FlightOffer, numberOfTravelers: Int) {
         self.selectedFlightOffer = selectedOffer
         self.selectedFlightDetails = FlightDetails(flightOffer: selectedOffer)
+        self.numberOfTravelers = numberOfTravelers
     }
     
     var body: some View {
@@ -21,7 +24,7 @@ struct FlightSelectionScreenView: View {
                         .padding(.top, 35)
                         .padding(.bottom, 20)
                     
-                    FlightSelectionSheetView(selectedFlightDetails: selectedFlightDetails)
+                    FlightSelectionSheetView(selectedFlightDetails: selectedFlightDetails, numberOfTravelers: numberOfTravelers)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -51,5 +54,6 @@ struct FlightSelectionScreenView: View {
         airline: "Fly Mostar",
         price: 150.0
     )
-    return FlightSelectionScreenView(selectedOffer: sampleOffer)
+    
+    FlightSelectionScreenView(selectedOffer: sampleOffer, numberOfTravelers: 2)
 }
