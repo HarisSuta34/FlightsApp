@@ -9,6 +9,8 @@ enum CompletionStatus: String {
     }
 }
 
+// Uklonjena je PassportDetails definicija jer već postoji
+
 struct FlightSelectionSheetView: View {
     let selectedFlightDetails: FlightDetails
     let numberOfTravelers: Int
@@ -25,8 +27,11 @@ struct FlightSelectionSheetView: View {
     @State private var showingAlert = false
     @State private var alertMessage = ""
     
-    // NOVO: State varijabla koja čuva odabrana sjedala
     @State private var selectedSeats: [Seat] = []
+    
+    // State varijable za čuvanje podataka o putovnici
+    @State private var passportInfo = PassportDetails()
+    @State private var passportPhotoData: Data? = nil
     
     var body: some View {
         VStack(spacing: 0) {
@@ -47,7 +52,10 @@ struct FlightSelectionSheetView: View {
                             )
                         }
                         
-                        NavigationLink(destination: CheckinView(status: $checkinStatus)) {
+                        NavigationLink(destination: CheckinView(
+                            status: $checkinStatus,
+                            passportDetails: $passportInfo,
+                            selectedImageData: $passportPhotoData)) {
                             SelectionOptionCardView(
                                 title: "Check-in",
                                 subtitle: checkinStatus == .completed ? "Completed" : "You can checkin now",
@@ -101,7 +109,6 @@ struct FlightSelectionSheetView: View {
                 .padding(.bottom, 20)
             }
             .background(Color.white)
-            .cornerRadius(20, corners: [.topLeft, .topRight])
             
             Button(action: {
                 if passengerDetailsStatus == .incomplete {
@@ -132,26 +139,5 @@ struct FlightSelectionSheetView: View {
                 dismissButton: .default(Text("OK"))
             )
         }
-    }
-}
-
-extension View {
-    func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
-        clipShape(RoundedCorner(radius: radius, corners: corners))
-    }
-}
-
-#Preview {
-    let sampleOffer = FlightOffer(
-        departureCity: "Mostar",
-        arrivalCity: "Sarajevo",
-        airline: "Fly Mostar",
-        price: 150.0
-    )
-    let sampleFlightDetails = FlightDetails(flightOffer: sampleOffer)
-    
-    return NavigationView {
-        FlightSelectionSheetView(selectedFlightDetails: sampleFlightDetails, numberOfTravelers: 2)
-            .background(Color(red: 36/255, green: 97/255, blue: 223/255))
     }
 }

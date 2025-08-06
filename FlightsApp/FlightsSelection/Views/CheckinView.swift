@@ -1,42 +1,43 @@
 import SwiftUI
 import PhotosUI
 
-
-
 struct CheckinView: View {
     @Binding var status: CompletionStatus
     @Environment(\.dismiss) var dismiss
     
-    @State private var passportDetails = PassportDetails()
+    // NOVO: Binding varijable za PassportDetails i sliku
+    @Binding var passportDetails: PassportDetails
+    @Binding var selectedImageData: Data?
     
-    @State private var selectedItem: PhotosPickerItem? = nil
-    @State private var selectedImageData: Data? = nil
+    @StateObject private var viewModel: CheckinViewModel
     
-    private var isFormValid: Bool {
-        !passportDetails.passportNumber.isEmpty && !passportDetails.countryOfIssue.isEmpty
-    }
-    
-    private var isCheckinComplete: Bool {
-        isFormValid || selectedImageData != nil
+    // NOVO: Inicijalizator za ViewModel
+    init(status: Binding<CompletionStatus>, passportDetails: Binding<PassportDetails>, selectedImageData: Binding<Data?>) {
+        _status = status
+        _passportDetails = passportDetails
+        _selectedImageData = selectedImageData
+        _viewModel = StateObject(wrappedValue: CheckinViewModel(
+            initialDetails: passportDetails.wrappedValue,
+            initialImageData: selectedImageData.wrappedValue))
     }
     
     var body: some View {
         VStack(spacing: 0) {
             Form {
                 Section(header: Text("Passport Details").foregroundColor(.white)) {
-                    TextField("Passport Number", text: $passportDetails.passportNumber)
+                    TextField("Passport Number", text: $viewModel.passportDetails.passportNumber)
                         .listRowBackground(Color.white)
                     
-                    TextField("Country of Issue", text: $passportDetails.countryOfIssue)
+                    TextField("Country of Issue", text: $viewModel.passportDetails.countryOfIssue)
                         .listRowBackground(Color.white)
                     
-                    DatePicker("Expiration Date", selection: $passportDetails.expirationDate, displayedComponents: .date)
+                    DatePicker("Expiration Date", selection: $viewModel.passportDetails.expirationDate, displayedComponents: .date)
                         .listRowBackground(Color.white)
                 }
                 
                 Section(header: Text("Upload Passport Photo (Optional)").foregroundColor(.white)) {
                     HStack {
-                        if let selectedImageData, let uiImage = UIImage(data: selectedImageData) {
+                        if let selectedImageData = viewModel.selectedImageData, let uiImage = UIImage(data: selectedImageData) {
                             Image(uiImage: uiImage)
                                 .resizable()
                                 .scaledToFit()
@@ -53,17 +54,13 @@ struct CheckinView: View {
                     }
                     .listRowBackground(Color.white)
                     
-                    PhotosPicker(selection: $selectedItem, matching: .images) {
+                    PhotosPicker(selection: $viewModel.selectedItem, matching: .images) {
                         Label("Select a photo", systemImage: "photo.on.rectangle.angled")
                             .frame(maxWidth: .infinity)
                     }
                     .listRowBackground(Color.white)
-                    .onChange(of: selectedItem) { oldItem, newItem in
-                        Task {
-                            if let data = try? await newItem?.loadTransferable(type: Data.self) {
-                                selectedImageData = data
-                            }
-                        }
+                    .onChange(of: viewModel.selectedItem) { oldItem, newItem in
+                        viewModel.handlePhotoPickerChange(newItem: newItem)
                     }
                 }
             }
@@ -85,6 +82,9 @@ struct CheckinView: View {
                 }
                 
                 Button(action: {
+                    // NOVO: Ažuriramo stanje u FlightSelectionSheetView
+                    passportDetails = viewModel.passportDetails
+                    selectedImageData = viewModel.selectedImageData
                     status = .completed
                     dismiss()
                 }) {
@@ -92,11 +92,11 @@ struct CheckinView: View {
                         .font(.headline)
                         .padding()
                         .frame(maxWidth: .infinity)
-                        .background(isCheckinComplete ? Color.blue : Color.gray)
+                        .background(viewModel.isCheckinComplete ? Color.blue : Color.gray)
                         .foregroundColor(.white)
                         .cornerRadius(10)
                 }
-                .disabled(!isCheckinComplete)
+                .disabled(!viewModel.isCheckinComplete)
             }
             .padding(.horizontal, 20)
             .padding(.top, 20)
@@ -111,5 +111,5 @@ struct CheckinView: View {
 }
 
 #Preview {
-    CheckinView(status: .constant(.incomplete))
+    CheckinView(status: .constant(.incomplete), passportDetails: .constant(PassportDetails()), selectedImageData: .constant(nil))
 }
