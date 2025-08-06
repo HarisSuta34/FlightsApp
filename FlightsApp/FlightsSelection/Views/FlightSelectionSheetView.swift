@@ -25,6 +25,9 @@ struct FlightSelectionSheetView: View {
     @State private var showingAlert = false
     @State private var alertMessage = ""
     
+    // NOVO: State varijabla koja čuva odabrana sjedala
+    @State private var selectedSeats: [Seat] = []
+    
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
@@ -62,7 +65,10 @@ struct FlightSelectionSheetView: View {
                             )
                         }
                         
-                        NavigationLink(destination: SeatSelectionView(status: $seatStatus, numberOfTravelers: numberOfTravelers)) {
+                        NavigationLink(destination: SeatSelectionView(
+                            status: $seatStatus,
+                            numberOfTravelers: numberOfTravelers,
+                            selectedSeats: $selectedSeats)) {
                             SelectionOptionCardView(
                                 title: "Choose seat",
                                 subtitle: seatStatus == .completed ? "Completed" : "Select your seat",
@@ -145,7 +151,7 @@ extension View {
     let sampleFlightDetails = FlightDetails(flightOffer: sampleOffer)
     
     return NavigationView {
-        FlightSelectionSheetView(selectedFlightDetails: sampleFlightDetails, numberOfTravelers: 2) 
+        FlightSelectionSheetView(selectedFlightDetails: sampleFlightDetails, numberOfTravelers: 2)
             .background(Color(red: 36/255, green: 97/255, blue: 223/255))
     }
 }
