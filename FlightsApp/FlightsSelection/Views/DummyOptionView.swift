@@ -18,7 +18,7 @@ struct DummyOptionView: View {
                 .font(.largeTitle)
                 .fontWeight(.bold)
             
-            Text("Ovo je privremeni ekran za opciju '\(title)'.")
+            Text("This is temporary screen for option'\(title)'.")
             
             Button("Complete \(title)") {
                 status = .completed

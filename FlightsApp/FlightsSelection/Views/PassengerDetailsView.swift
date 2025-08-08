@@ -5,14 +5,13 @@ struct PassengerDetailsView: View {
     @Binding var details: PassengerDetails
     @Environment(\.dismiss) var dismiss
     
-    private var isFormValid: Bool {
-        !details.firstName.isEmpty && !details.lastName.isEmpty && !details.nationality.isEmpty
-    }
-    
-    private func resetForm() {
-        details = PassengerDetails()
-        status = .incomplete
-        dismiss()
+    @StateObject private var viewModel: PassengerDetailsViewModel
+
+    init(status: Binding<CompletionStatus>, details: Binding<PassengerDetails>) {
+        _status = status
+        _details = details
+        _viewModel = StateObject(wrappedValue: PassengerDetailsViewModel(
+            initialDetails: details.wrappedValue))
     }
     
     var body: some View {
@@ -22,17 +21,17 @@ struct PassengerDetailsView: View {
             
             Form {
                 Section(header: Text("Personal Information").foregroundColor(.white)) {
-                    TextField("First Name", text: $details.firstName)
+                    TextField("First Name", text: $viewModel.passengerDetails.firstName)
                         .listRowBackground(Color.white)
-                    TextField("Last Name", text: $details.lastName)
+                    TextField("Last Name", text: $viewModel.passengerDetails.lastName)
                         .listRowBackground(Color.white)
-                    TextField("Nationality", text: $details.nationality)
-                        .listRowBackground(Color.white)
-                    
-                    DatePicker("Date of Birth", selection: $details.dateOfBirth, displayedComponents: .date)
+                    TextField("Nationality", text: $viewModel.passengerDetails.nationality)
                         .listRowBackground(Color.white)
                     
-                    Picker("Gender", selection: $details.gender) {
+                    DatePicker("Date of Birth", selection: $viewModel.passengerDetails.dateOfBirth, displayedComponents: .date)
+                        .listRowBackground(Color.white)
+                    
+                    Picker("Gender", selection: $viewModel.passengerDetails.gender) {
                         Text("Male").tag("Male")
                         Text("Female").tag("Female")
                         Text("Other").tag("Other")
@@ -42,24 +41,64 @@ struct PassengerDetailsView: View {
                 
                 Section {
                     HStack {
+                        
+                       /* Button(action: {
+                            viewModel.resetDetails()
+                            //details = viewModel.passengerDetails
+                            status = .incomplete
+                            dismiss()
+                        }) {
+                            Text("Reset Details")
+                                .font(.headline)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .foregroundColor(.red)
+                                .cornerRadius(10)
+                        }
+                        .background(Color.green)*/
+                        
+                        
                         Button("Reset Details") {
-                            resetForm()
+                            viewModel.resetDetails()
+                            details = PassengerDetails()
+                            //details = viewModel.passengerDetails
+                            status = .incomplete
+                            dismiss()
                         }
                         .foregroundColor(.red)
                         .frame(maxWidth: .infinity)
                         .listRowBackground(Color.white)
                         
-                        Button("Save Details") {
+                       /* Button(action: {
+                            //details = viewModel.passengerDetails
                             status = .completed
                             dismiss()
+                        }) {
+                            Text("Save Details")
+                                .font(.headline)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .foregroundColor(.blue)
+                                .cornerRadius(10)
                         }
-                        .disabled(!isFormValid)
-                        .frame(maxWidth: .infinity)
-                        .listRowBackground(Color.white)
+                        .background(Color.gray)*/
+                        
                     }
                     .padding(.vertical, 8)
-                    .listRowBackground(Color.white)
+                    //.listRowBackground(Color.white)
                 }
+                HStack{
+                    Button("Save Details") {
+                        details = viewModel.passengerDetails
+                        status = .completed
+                        dismiss()
+                    }
+                    .disabled(!viewModel.isFormValid)
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.white)
+                    .padding(.trailing, 5)
+                }
+                .padding(.vertical, 8)
             }
             .scrollContentBackground(.hidden)
         }

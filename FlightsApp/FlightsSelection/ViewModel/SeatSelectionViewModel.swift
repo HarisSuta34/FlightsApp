@@ -22,7 +22,6 @@ class SeatSelectionViewModel: ObservableObject {
     init(numberOfTravelers: Int, initialSelectedSeats: [Seat] = []) {
         self.numberOfTravelers = numberOfTravelers
         self.generateSeats(initialSelectedSeats: initialSelectedSeats)
-        // Važno: selectedSeats treba da se inicijalizuje NAKON generateSeats
         self.selectedSeats = self.seats.filter { $0.status == .selected }
     }
         

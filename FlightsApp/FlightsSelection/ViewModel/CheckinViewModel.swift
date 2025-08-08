@@ -35,5 +35,9 @@ class CheckinViewModel: ObservableObject {
         }
     }
     
+    func resetDetails() {
+        passportDetails = PassportDetails()
+    }
+    
 }
 

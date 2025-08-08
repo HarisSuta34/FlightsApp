@@ -5,13 +5,11 @@ struct CheckinView: View {
     @Binding var status: CompletionStatus
     @Environment(\.dismiss) var dismiss
     
-    // NOVO: Binding varijable za PassportDetails i sliku
     @Binding var passportDetails: PassportDetails
     @Binding var selectedImageData: Data?
     
     @StateObject private var viewModel: CheckinViewModel
     
-    // NOVO: Inicijalizator za ViewModel
     init(status: Binding<CompletionStatus>, passportDetails: Binding<PassportDetails>, selectedImageData: Binding<Data?>) {
         _status = status
         _passportDetails = passportDetails
@@ -70,6 +68,7 @@ struct CheckinView: View {
             HStack(spacing: 20) {
                 Button(action: {
                     status = .incomplete
+                    viewModel.resetDetails()
                     dismiss()
                 }) {
                     Text("Cancel")
@@ -82,7 +81,6 @@ struct CheckinView: View {
                 }
                 
                 Button(action: {
-                    // NOVO: Ažuriramo stanje u FlightSelectionSheetView
                     passportDetails = viewModel.passportDetails
                     selectedImageData = viewModel.selectedImageData
                     status = .completed

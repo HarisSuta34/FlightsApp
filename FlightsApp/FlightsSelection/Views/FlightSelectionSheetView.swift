@@ -1,15 +1,6 @@
 import SwiftUI
 
-enum CompletionStatus: String {
-    case incomplete
-    case completed
-    
-    var color: Color {
-        self == .completed ? .green : .red
-    }
-}
 
-// Uklonjena je PassportDetails definicija jer već postoji
 
 struct FlightSelectionSheetView: View {
     let selectedFlightDetails: FlightDetails
@@ -29,7 +20,6 @@ struct FlightSelectionSheetView: View {
     
     @State private var selectedSeats: [Seat] = []
     
-    // State varijable za čuvanje podataka o putovnici
     @State private var passportInfo = PassportDetails()
     @State private var passportPhotoData: Data? = nil
     
@@ -139,5 +129,14 @@ struct FlightSelectionSheetView: View {
                 dismissButton: .default(Text("OK"))
             )
         }
+    }
+}
+
+enum CompletionStatus: String {
+    case incomplete
+    case completed
+    
+    var color: Color {
+        self == .completed ? .green : .red
     }
 }
