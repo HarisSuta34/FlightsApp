@@ -140,3 +140,20 @@ enum CompletionStatus: String {
         self == .completed ? .green : .red
     }
 }
+
+#Preview{
+    
+        let sampleFlightOffer = FlightOffer(
+            departureCity: "Sarajevo",
+            arrivalCity: "Mostar",
+            airline: "Fly Mostar",
+            price: 150.0
+        )
+        let sampleFlightDetails = FlightDetails(flightOffer: sampleFlightOffer)
+        let sampleNumberOfTravelers = 2
+        
+        return FlightSelectionSheetView(
+            selectedFlightDetails: sampleFlightDetails,
+            numberOfTravelers: sampleNumberOfTravelers
+        )
+}
